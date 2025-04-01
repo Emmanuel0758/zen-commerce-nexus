@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import Index from "./pages/Index";
 import ProductsPage from "./pages/ProductsPage";
 import OrdersPage from "./pages/OrdersPage";
+import ClientsPage from "./pages/ClientsPage";
 import LogisticsPage from "./pages/LogisticsPage";
 import MarketingPage from "./pages/MarketingPage";
 import ReportsPage from "./pages/ReportsPage";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/produits" element={<ProductsPage />} />
             <Route path="/commandes" element={<OrdersPage />} />
+            <Route path="/clients" element={<ClientsPage />} />
             <Route path="/logistique" element={<LogisticsPage />} />
             <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/rapports" element={<ReportsPage />} />

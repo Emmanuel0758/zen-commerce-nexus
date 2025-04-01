@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sun, Moon, ChevronLeft, ChevronRight, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
@@ -103,6 +103,11 @@ const navItems: NavItem[] = [
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
+  },
+  {
+    title: "QR Code",
+    href: "/qr-code",
+    icon: <QrCode />,
   },
   {
     title: "Logistique",

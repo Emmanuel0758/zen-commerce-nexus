@@ -14,6 +14,7 @@ import LogisticsPage from "./pages/LogisticsPage";
 import MarketingPage from "./pages/MarketingPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
+import QRCodePage from "./pages/QRCodePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/rapports" element={<ReportsPage />} />
             <Route path="/parametres" element={<SettingsPage />} />
+            <Route path="/qr-code" element={<QRCodePage />} />
             {/* Routes futures */}
             <Route path="*" element={<NotFound />} />
           </Routes>

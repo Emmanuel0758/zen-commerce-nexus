@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface AppSettings {
@@ -35,7 +36,12 @@ export const AppSettingsProvider = ({ children }: { children: React.ReactNode })
     const savedSettings = localStorage.getItem('appSettings');
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings));
+        const parsedSettings = JSON.parse(savedSettings);
+        // Validate language to ensure it's always either 'fr' or 'en'
+        if (parsedSettings.language !== 'fr' && parsedSettings.language !== 'en') {
+          parsedSettings.language = defaultSettings.language;
+        }
+        setSettings(parsedSettings);
       } catch (error) {
         console.error('Failed to parse saved settings:', error);
       }
@@ -44,9 +50,14 @@ export const AppSettingsProvider = ({ children }: { children: React.ReactNode })
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => {
-      const updated = { ...prev, ...newSettings };
-      localStorage.setItem('appSettings', JSON.stringify(updated));
-      return updated;
+      // Ensure language is always valid before saving
+      let validatedSettings = { ...prev, ...newSettings };
+      if (validatedSettings.language !== 'fr' && validatedSettings.language !== 'en') {
+        validatedSettings.language = defaultSettings.language;
+      }
+      
+      localStorage.setItem('appSettings', JSON.stringify(validatedSettings));
+      return validatedSettings;
     });
   };
 

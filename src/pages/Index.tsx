@@ -33,7 +33,9 @@ const translations = {
 export default function Index() {
   const { settings } = useAppSettings();
   const { currency, language } = settings;
-  const t = translations[language];
+  
+  // Add fallback to 'fr' if language is not in translations
+  const t = translations[language as keyof typeof translations] || translations.fr;
   
   const getCurrencySymbol = (currencyCode: string) => {
     switch(currencyCode) {
@@ -45,6 +47,11 @@ export default function Index() {
   };
   
   const currencySymbol = getCurrencySymbol(currency);
+
+  // Add console logs to help debug future issues
+  console.log("Current language:", language);
+  console.log("Available translations:", Object.keys(translations));
+  console.log("Using translations:", t ? "Found" : "Not found");
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

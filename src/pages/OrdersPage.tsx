@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -486,7 +487,7 @@ export default function OrdersPage() {
             <CardContent className="flex flex-col items-center justify-center p-6">
               <div className="text-3xl font-bold text-red-500">{cancelledCount + onHoldCount}</div>
               <p className="text-sm text-muted-foreground">Annulées/En attente</p>
-            </Card>
+            </CardContent>
           </Card>
         </section>
 

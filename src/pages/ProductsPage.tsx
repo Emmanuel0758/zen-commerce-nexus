@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -457,7 +458,7 @@ export default function ProductsPage() {
             <CardContent className="flex flex-col items-center justify-center p-6">
               <div className="text-4xl font-bold text-red-500">{outOfStockCount}</div>
               <p className="text-sm text-muted-foreground">Rupture de stock</p>
-            </Card>
+            </CardContent>
           </Card>
         </section>
 

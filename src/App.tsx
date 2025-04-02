@@ -16,6 +16,7 @@ import MarketingPage from "./pages/MarketingPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import QRCodePage from "./pages/QRCodePage";
+import AIAssistantPage from "./pages/AIAssistantPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/qr-code" element={<QRCodePage />} />
+              <Route path="/ai-assistant" element={<AIAssistantPage />} />
               <Route path="/produits" element={<ProductsPage />} />
               <Route path="/commandes" element={<OrdersPage />} />
               <Route path="/clients" element={<ClientsPage />} />

@@ -1,6 +1,4 @@
-// The file contains JSX but uses the type "warning" which is not allowed
-// Will update any occurrences of "warning" variant to "destructive" which is valid
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -8,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link, QrCode, Mail, Phone, Wifi, Text, Download, Save, Settings } from "lucide-react";
+import { Link, QrCode, Mail, Phone, Wifi, Text, Download, Save, Settings, Brain } from "lucide-react";
 
 interface QRCodeData {
   id: string;
@@ -33,16 +31,36 @@ export const QRCodeGenerator = () => {
     return savedHistory ? JSON.parse(savedHistory) : [];
   });
 
-  // Fonction pour manipuler le contenu basé sur le type de QR
+  useEffect(() => {
+    const savedSuggestion = localStorage.getItem("qrSuggestion");
+    if (savedSuggestion) {
+      try {
+        const suggestion = JSON.parse(savedSuggestion);
+        setQrType(suggestion.type);
+        setQrValue(suggestion.content);
+        if (suggestion.label) {
+          setQrLabel(suggestion.label);
+        }
+        
+        toast({
+          title: "Suggestion appliquée",
+          description: "La suggestion de l'IA a été appliquée au générateur de QR code",
+        });
+        
+        localStorage.removeItem("qrSuggestion");
+      } catch (error) {
+        console.error("Erreur lors du chargement de la suggestion:", error);
+      }
+    }
+  }, []);
+
   const handleContentChange = (value: string) => {
     setQrValue(value);
   };
 
-  // Fonction pour formatter le contenu basé sur le type
   const getFormattedContent = () => {
     switch (qrType) {
       case "url":
-        // Assurez-vous que l'URL commence par http:// ou https://
         if (qrValue && !qrValue.startsWith('http://') && !qrValue.startsWith('https://')) {
           return `https://${qrValue}`;
         }
@@ -52,12 +70,10 @@ export const QRCodeGenerator = () => {
       case "phone":
         return `tel:${qrValue}`;
       case "wifi":
-        // Format: WIFI:S:SSID;T:WPA;P:password;;
         try {
           const wifiData = JSON.parse(qrValue);
           return `WIFI:S:${wifiData.ssid};T:${wifiData.security || 'WPA'};P:${wifiData.password};;`;
         } catch (e) {
-          // Si le format n'est pas JSON valide, utiliser comme texte brut
           toast({
             title: "Format WiFi non valide",
             description: "Utilisez le format JSON: {\"ssid\":\"nom_reseau\",\"password\":\"mot_de_passe\",\"security\":\"WPA\"}",
@@ -70,7 +86,6 @@ export const QRCodeGenerator = () => {
     }
   };
 
-  // Fonction pour obtenir un placeholder approprié selon le type
   const getPlaceholder = () => {
     switch (qrType) {
       case "url":
@@ -86,7 +101,6 @@ export const QRCodeGenerator = () => {
     }
   };
 
-  // Fonction pour obtenir un label approprié selon le type
   const getInputLabel = () => {
     switch (qrType) {
       case "url":
@@ -102,7 +116,6 @@ export const QRCodeGenerator = () => {
     }
   };
 
-  // Fonction pour générer le QR code
   const handleGenerateQR = () => {
     const formattedContent = getFormattedContent();
     if (!formattedContent) {
@@ -114,7 +127,6 @@ export const QRCodeGenerator = () => {
       return;
     }
 
-    // Capturer l'image du QR code
     const svg = document.querySelector("#qrcode svg");
     const svgData = svg ? new XMLSerializer().serializeToString(svg) : "";
     const canvas = document.createElement("canvas");
@@ -126,7 +138,6 @@ export const QRCodeGenerator = () => {
       ctx?.drawImage(img, 0, 0);
       const pngImage = canvas.toDataURL("image/png");
       
-      // Créer un nouvel élément d'historique
       const newQRCode: QRCodeData = {
         id: `qr-${Date.now()}`,
         content: formattedContent,
@@ -138,7 +149,6 @@ export const QRCodeGenerator = () => {
         img: pngImage
       };
       
-      // Mettre à jour l'historique
       const newHistory = [newQRCode, ...history];
       setHistory(newHistory);
       localStorage.setItem("qrcodeHistory", JSON.stringify(newHistory));
@@ -151,7 +161,6 @@ export const QRCodeGenerator = () => {
     img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
   };
 
-  // Fonction pour télécharger le QR code
   const handleDownloadQR = () => {
     const svg = document.querySelector("#qrcode svg");
     if (!svg) {
@@ -188,7 +197,6 @@ export const QRCodeGenerator = () => {
     img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
   };
 
-  // Fonction pour obtenir l'icône appropriée selon le type
   const getTypeIcon = (type: "url" | "text" | "email" | "wifi" | "phone") => {
     switch (type) {
       case "url": return <Link className="h-4 w-4" />;
@@ -201,6 +209,18 @@ export const QRCodeGenerator = () => {
 
   return (
     <div className="grid gap-6">
+      <div className="flex items-center justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={() => window.location.href = '/ai-assistant'}
+        >
+          <Brain className="h-4 w-4" />
+          Utiliser l'Assistant IA
+        </Button>
+      </div>
+      
       <Tabs defaultValue="url" value={qrType} onValueChange={(value) => setQrType(value as "url" | "text" | "email" | "wifi" | "phone")}>
         <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="url" className="flex items-center gap-2">

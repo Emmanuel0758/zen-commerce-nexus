@@ -1,9 +1,10 @@
+
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   Home, Package, ShoppingCart, Users, Truck, BarChart2, 
-  Settings, Megaphone, QrCode, Brain 
+  Settings, Megaphone, QrCode, Bot 
 } from "lucide-react";
 import { useAppSettings } from "@/hooks/use-app-settings";
 
@@ -63,7 +64,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
     {
       title: "Assistant IA",
       href: "/ai-assistant",
-      icon: <Brain className="h-5 w-5" />,
+      icon: <Bot className="h-5 w-5" />,
     },
   ];
 

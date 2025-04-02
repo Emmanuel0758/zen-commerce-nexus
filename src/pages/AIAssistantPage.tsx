@@ -3,7 +3,7 @@ import { useState } from "react";
 import Layout from "@/components/Layout";
 import { AIAssistant } from "@/components/AIAssistant";
 import { Card } from "@/components/ui/card";
-import { Brain, MessageSquareText, QrCode } from "lucide-react";
+import { Bot, MessageSquareText, QrCode } from "lucide-react";
 
 export default function AIAssistantPage() {
   return (
@@ -11,7 +11,7 @@ export default function AIAssistantPage() {
       <div className="p-6 space-y-6">
         <header className="mb-6">
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Brain className="h-8 w-8 text-primary" />
+            <Bot className="h-8 w-8 text-primary" />
             Assistant IA
           </h1>
           <p className="text-muted-foreground">

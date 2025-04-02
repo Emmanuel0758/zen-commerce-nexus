@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Robot, Send, Loader2, QrCode, Copy, Mail, Phone, Wifi, Text } from "lucide-react";
+import { Bot, Send, Loader2, QrCode, Copy, Mail, Phone, Wifi, Text } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface SuggestionType {
@@ -120,7 +120,7 @@ export const AIAssistant = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Robot className="h-5 w-5 text-primary" />
+            <Bot className="h-5 w-5 text-primary" />
             Assistant IA
           </CardTitle>
           <CardDescription>

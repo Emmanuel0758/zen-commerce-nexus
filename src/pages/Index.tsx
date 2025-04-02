@@ -6,45 +6,60 @@ import { SalesChart } from "@/components/SalesChart";
 import { LatestOrdersCard } from "@/components/LatestOrdersCard";
 import { ProductInventoryCard } from "@/components/ProductInventoryCard";
 import { DeliveryMapCard } from "@/components/DeliveryMapCard";
+import { useAppSettings } from "@/hooks/use-app-settings";
+
+// Translations for the dashboard
+const translations = {
+  fr: {
+    dashboard: "Tableau de bord",
+    welcome: "Bienvenue dans votre espace",
+    salesTitle: "Ventes Aujourd'hui",
+    pendingOrdersTitle: "Commandes En Attente",
+    lowStockTitle: "Stock Bas (Zen Classic)",
+    deliveriesTitle: "Livraisons En Cours",
+    units: "unités"
+  },
+  en: {
+    dashboard: "Dashboard",
+    welcome: "Welcome to your workspace",
+    salesTitle: "Today's Sales",
+    pendingOrdersTitle: "Pending Orders",
+    lowStockTitle: "Low Stock (Zen Classic)",
+    deliveriesTitle: "Active Deliveries",
+    units: "units"
+  }
+};
 
 export default function Index() {
-  const [currencySymbol, setCurrencySymbol] = useState("€");
+  const { settings } = useAppSettings();
+  const { currency, language } = settings;
+  const t = translations[language];
   
-  useEffect(() => {
-    // Get saved currency from localStorage or use default
-    const savedCurrencySymbol = localStorage.getItem('currencySymbol');
-    if (savedCurrencySymbol) {
-      setCurrencySymbol(savedCurrencySymbol);
+  const getCurrencySymbol = (currencyCode: string) => {
+    switch(currencyCode) {
+      case 'EUR': return '€';
+      case 'USD': return '$';
+      case 'GBP': return '£';
+      default: return currencyCode;
     }
-    
-    // Listen for currency changes from settings
-    const handleSettingsChange = (event: CustomEvent) => {
-      if (event.detail && event.detail.currencySymbol) {
-        setCurrencySymbol(event.detail.currencySymbol);
-      }
-    };
-    
-    window.addEventListener('app-settings-changed', handleSettingsChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('app-settings-changed', handleSettingsChange as EventListener);
-    };
-  }, []);
+  };
+  
+  const currencySymbol = getCurrencySymbol(currency);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <SidebarNav />
       <div className="flex-1 overflow-y-auto p-6">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold">Tableau de bord</h1>
+          <h1 className="text-3xl font-bold">{t.dashboard}</h1>
           <p className="text-muted-foreground">
-            Bienvenue dans votre espace Zen Commerce
+            {t.welcome} {settings.appName}
           </p>
         </header>
 
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <StatCard
-            title="Ventes Aujourd'hui"
+            title={t.salesTitle}
             value={`1 250 ${currencySymbol}`}
             trend={8.2}
             type="sales"
@@ -67,7 +82,7 @@ export default function Index() {
             }
           />
           <StatCard
-            title="Commandes En Attente"
+            title={t.pendingOrdersTitle}
             value="15"
             type="orders"
             icon={
@@ -91,8 +106,8 @@ export default function Index() {
             }
           />
           <StatCard
-            title="Stock Bas (Zen Classic)"
-            value="85 unités"
+            title={t.lowStockTitle}
+            value={`85 ${t.units}`}
             trend={-12.7}
             type="inventory"
             icon={
@@ -118,7 +133,7 @@ export default function Index() {
             }
           />
           <StatCard
-            title="Livraisons En Cours"
+            title={t.deliveriesTitle}
             value="8"
             type="delivery"
             icon={

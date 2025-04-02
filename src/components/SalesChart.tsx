@@ -10,8 +10,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useAppSettings } from "@/hooks/use-app-settings";
 
-const dailyData = [
+// French data (default)
+const dailyDataFr = [
   { name: "Lun", value: 950 },
   { name: "Mar", value: 1100 },
   { name: "Mer", value: 800 },
@@ -21,14 +23,14 @@ const dailyData = [
   { name: "Dim", value: 1250 },
 ];
 
-const weeklyData = [
+const weeklyDataFr = [
   { name: "Sem 1", value: 6500 },
   { name: "Sem 2", value: 7800 },
   { name: "Sem 3", value: 9200 },
   { name: "Sem 4", value: 8300 },
 ];
 
-const monthlyData = [
+const monthlyDataFr = [
   { name: "Jan", value: 28000 },
   { name: "Fév", value: 25500 },
   { name: "Mar", value: 32000 },
@@ -38,34 +40,109 @@ const monthlyData = [
   { name: "Juil", value: 31000 },
 ];
 
+// English data
+const dailyDataEn = [
+  { name: "Mon", value: 950 },
+  { name: "Tue", value: 1100 },
+  { name: "Wed", value: 800 },
+  { name: "Thu", value: 1300 },
+  { name: "Fri", value: 1450 },
+  { name: "Sat", value: 1050 },
+  { name: "Sun", value: 1250 },
+];
+
+const weeklyDataEn = [
+  { name: "Week 1", value: 6500 },
+  { name: "Week 2", value: 7800 },
+  { name: "Week 3", value: 9200 },
+  { name: "Week 4", value: 8300 },
+];
+
+const monthlyDataEn = [
+  { name: "Jan", value: 28000 },
+  { name: "Feb", value: 25500 },
+  { name: "Mar", value: 32000 },
+  { name: "Apr", value: 30500 },
+  { name: "May", value: 28000 },
+  { name: "Jun", value: 29000 },
+  { name: "Jul", value: 31000 },
+];
+
+// Translation object for UI text
+const translations = {
+  fr: {
+    dailyTitle: "Ventes journalières",
+    weeklyTitle: "Ventes hebdomadaires",
+    monthlyTitle: "Ventes mensuelles",
+    day: "Jour",
+    week: "Semaine",
+    month: "Mois",
+    sales: "Ventes"
+  },
+  en: {
+    dailyTitle: "Daily Sales",
+    weeklyTitle: "Weekly Sales",
+    monthlyTitle: "Monthly Sales",
+    day: "Day",
+    week: "Week",
+    month: "Month",
+    sales: "Sales"
+  }
+};
+
 type TimeRange = "daily" | "weekly" | "monthly";
 
 export function SalesChart() {
   const [range, setRange] = useState<TimeRange>("daily");
-
+  const { settings } = useAppSettings();
+  const { language } = settings;
+  
+  const t = translations[language];
+  
   let chartData;
   let chartTitle;
   
-  switch (range) {
-    case "daily":
-      chartData = dailyData;
-      chartTitle = "Ventes journalières";
-      break;
-    case "weekly":
-      chartData = weeklyData;
-      chartTitle = "Ventes hebdomadaires";
-      break;
-    case "monthly":
-      chartData = monthlyData;
-      chartTitle = "Ventes mensuelles";
-      break;
-    default:
-      chartData = dailyData;
-      chartTitle = "Ventes journalières";
+  // Select data based on language and time range
+  if (language === 'fr') {
+    switch (range) {
+      case "daily":
+        chartData = dailyDataFr;
+        chartTitle = t.dailyTitle;
+        break;
+      case "weekly":
+        chartData = weeklyDataFr;
+        chartTitle = t.weeklyTitle;
+        break;
+      case "monthly":
+        chartData = monthlyDataFr;
+        chartTitle = t.monthlyTitle;
+        break;
+      default:
+        chartData = dailyDataFr;
+        chartTitle = t.dailyTitle;
+    }
+  } else {
+    switch (range) {
+      case "daily":
+        chartData = dailyDataEn;
+        chartTitle = t.dailyTitle;
+        break;
+      case "weekly":
+        chartData = weeklyDataEn;
+        chartTitle = t.weeklyTitle;
+        break;
+      case "monthly":
+        chartData = monthlyDataEn;
+        chartTitle = t.monthlyTitle;
+        break;
+      default:
+        chartData = dailyDataEn;
+        chartTitle = t.dailyTitle;
+    }
   }
 
   const formatValue = (value: number) => {
-    return `${value.toLocaleString()} €`;
+    return `${value.toLocaleString()} ${settings.currency === 'EUR' ? '€' : settings.currency}`;
   };
 
   return (
@@ -81,7 +158,7 @@ export function SalesChart() {
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            Jour
+            {t.day}
           </button>
           <button
             onClick={() => setRange("weekly")}
@@ -91,7 +168,7 @@ export function SalesChart() {
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            Semaine
+            {t.week}
           </button>
           <button
             onClick={() => setRange("monthly")}
@@ -101,7 +178,7 @@ export function SalesChart() {
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            Mois
+            {t.month}
           </button>
         </div>
       </CardHeader>
@@ -126,11 +203,11 @@ export function SalesChart() {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="name" className="text-xs" />
               <YAxis
-                tickFormatter={(value) => `${value} €`}
+                tickFormatter={(value) => `${value} ${settings.currency === 'EUR' ? '€' : settings.currency}`}
                 className="text-xs"
               />
               <Tooltip
-                formatter={(value) => [formatValue(Number(value)), "Ventes"]}
+                formatter={(value) => [formatValue(Number(value)), t.sales]}
               />
               <Area
                 type="monotone"

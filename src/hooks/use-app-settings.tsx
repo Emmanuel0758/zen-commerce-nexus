@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface AppSettings {
@@ -8,6 +7,7 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   emailTemplates: string;
   analyticsEnabled: boolean;
+  language: 'fr' | 'en';
 }
 
 const defaultSettings: AppSettings = {
@@ -16,7 +16,8 @@ const defaultSettings: AppSettings = {
   currency: 'XOF',
   theme: 'system',
   emailTemplates: 'default',
-  analyticsEnabled: true
+  analyticsEnabled: true,
+  language: 'fr'
 };
 
 interface AppSettingsContextType {
@@ -30,7 +31,6 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(und
 export const AppSettingsProvider = ({ children }: { children: React.ReactNode }) => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
 
-  // Load settings from localStorage on initial render
   useEffect(() => {
     const savedSettings = localStorage.getItem('appSettings');
     if (savedSettings) {
@@ -42,7 +42,6 @@ export const AppSettingsProvider = ({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  // Update settings and persist to localStorage
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
@@ -51,7 +50,6 @@ export const AppSettingsProvider = ({ children }: { children: React.ReactNode })
     });
   };
 
-  // Reset settings to defaults
   const resetSettings = () => {
     localStorage.removeItem('appSettings');
     setSettings(defaultSettings);

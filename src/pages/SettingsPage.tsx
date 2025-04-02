@@ -38,6 +38,7 @@ const SettingsPage = () => {
     theme: settings.theme,
     emailTemplates: settings.emailTemplates,
     analyticsEnabled: settings.analyticsEnabled,
+    language: settings.language,
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -128,6 +129,22 @@ const SettingsPage = () => {
                     onChange={handleInputChange}
                     placeholder="Nom de l'application"
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="language">Langue</Label>
+                  <Select
+                    value={formState.language}
+                    onValueChange={(value) => handleSelectChange("language", value)}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez une langue" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fr">Français</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">

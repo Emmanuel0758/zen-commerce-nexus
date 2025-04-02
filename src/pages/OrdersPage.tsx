@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -212,26 +212,22 @@ export default function OrdersPage() {
   };
 
   const handleDownloadInvoice = (order: Order) => {
-    // Create a new PDF document
     const doc = new jsPDF();
     
-    // Add company logo if available
     if (settings.logo) {
       try {
         doc.addImage(settings.logo, 'JPEG', 15, 10, 30, 30);
       } catch (error) {
         console.error("Erreur lors du chargement du logo:", error);
-        // Fallback if logo can't be loaded
         doc.setFontSize(22);
-        doc.setTextColor(128, 0, 128); // Purple for logo text
+        doc.setTextColor(128, 0, 128);
         doc.text(settings.appName.substring(0, 1), 25, 25);
       }
     }
     
-    // Add company information
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text(settings.logo ? '50' : '15', '25', settings.appName.toUpperCase());
+    doc.text(settings.appName.toUpperCase(), settings.logo ? 50 : 15, 25);
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -239,7 +235,6 @@ export default function OrdersPage() {
     doc.text('75001 Paris, France', settings.logo ? 50 : 15, 37);
     doc.text('contact@zenbeverages.com', settings.logo ? 50 : 15, 42);
     
-    // Add invoice title and number
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('FACTURE', 105, 55, { align: 'center' });
@@ -248,7 +243,6 @@ export default function OrdersPage() {
     doc.text(`N° ${order.id.replace('ZEN-', 'INV-')}`, 105, 62, { align: 'center' });
     doc.text(`Date: ${order.date}`, 105, 68, { align: 'center' });
     
-    // Add billing information
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Facturé à:', 15, 80);
@@ -256,62 +250,56 @@ export default function OrdersPage() {
     doc.text(order.customer, 15, 87);
     doc.text('client@example.com', 15, 93);
     
-    // Add invoice details
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     
-    // Table header
     doc.line(15, 105, 195, 105);
     doc.text('Description', 17, 112);
-    doc.text('Qté', 100, 112, { align: 'center' });
-    doc.text('Prix', 140, 112, { align: 'right' });
-    doc.text('Total', 190, 112, { align: 'right' });
+    doc.text('Qté', 100, 112);
+    doc.text('Prix', 140, 112);
+    doc.text('Total', 190, 112);
     doc.line(15, 115, 195, 115);
     
     let y = 122;
     let totalAmount = 0;
     
-    // Add line items
     doc.setFont('helvetica', 'normal');
     doc.text('Zen Classic (500ml)', 17, y);
-    doc.text('2', 100, y, { align: 'center' });
-    doc.text('9 999 FCFA', 140, y, { align: 'right' });
-    doc.text('19 998 FCFA', 190, y, { align: 'right' });
+    doc.text('2', 100, y);
+    doc.text('9 999 FCFA', 140, y);
+    doc.text('19 998 FCFA', 190, y);
     totalAmount += 19998;
     
     if (order.items > 1) {
       y += 10;
       doc.text('Zen Boost (250ml)', 17, y);
-      doc.text('1', 100, y, { align: 'center' });
-      doc.text('7 250 FCFA', 140, y, { align: 'right' });
-      doc.text('7 250 FCFA', 190, y, { align: 'right' });
+      doc.text('1', 100, y);
+      doc.text('7 250 FCFA', 140, y);
+      doc.text('7 250 FCFA', 190, y);
       totalAmount += 7250;
     }
     
     if (order.items > 2) {
       y += 10;
       doc.text('Zen Relax (1L)', 17, y);
-      doc.text('1', 100, y, { align: 'center' });
-      doc.text('14 995 FCFA', 140, y, { align: 'right' });
-      doc.text('14 995 FCFA', 190, y, { align: 'right' });
+      doc.text('1', 100, y);
+      doc.text('14 995 FCFA', 140, y);
+      doc.text('14 995 FCFA', 190, y);
       totalAmount += 14995;
     }
     
-    // Add total
     y += 20;
     doc.line(15, y - 5, 195, y - 5);
     doc.setFont('helvetica', 'bold');
     doc.text('Total', 150, y);
-    doc.text(`${totalAmount.toLocaleString('fr-FR')} FCFA`, 190, y, { align: 'right' });
+    doc.text(`${totalAmount.toLocaleString('fr-FR')} FCFA`, 190, y);
     
-    // Add footer
     y += 40;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('Merci pour votre commande!', 105, y, { align: 'center' });
-    doc.text(`${settings.appName} - SIRET: 12345678900000`, 105, y + 5, { align: 'center' });
+    doc.text('Merci pour votre commande!', 105, y);
+    doc.text(`${settings.appName} - SIRET: 12345678900000`, 105, y + 5);
     
-    // Save the PDF
     doc.save(`facture-${order.id}.pdf`);
     
     toast({
@@ -442,10 +430,10 @@ export default function OrdersPage() {
                   <SelectItem value="onhold">En attente de validation</SelectItem>
                 </SelectContent>
               </Select>
-              <input
+              <Input
                 type="search"
                 placeholder="Rechercher..."
-                className="rounded-md border border-input px-3 py-1 text-sm text-foreground"
+                className="rounded-md border border-input px-3 py-1 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -640,7 +628,7 @@ export default function OrdersPage() {
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => handleDownloadInvoice(currentOrder!)}
+              onClick={() => currentOrder && handleDownloadInvoice(currentOrder)}
             >
               <Download className="h-4 w-4 mr-2" />
               Télécharger

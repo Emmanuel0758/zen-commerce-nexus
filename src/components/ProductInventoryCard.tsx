@@ -1,4 +1,6 @@
 
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -43,20 +45,49 @@ const demoProducts: Product[] = [
 ];
 
 export function ProductInventoryCard() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  
+  const filteredProducts = demoProducts.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-md font-medium">Inventaire Produits</CardTitle>
         <div className="space-x-2">
-          <Button size="sm" variant="outline">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => {
+              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(demoProducts, null, 2));
+              const downloadAnchorNode = document.createElement('a');
+              downloadAnchorNode.setAttribute("href", dataStr);
+              downloadAnchorNode.setAttribute("download", "zen-products-inventory.json");
+              document.body.appendChild(downloadAnchorNode);
+              downloadAnchorNode.click();
+              downloadAnchorNode.remove();
+            }}
+          >
             Exporter
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => navigate("/produits")}>
             Ajouter
           </Button>
         </div>
       </CardHeader>
       <CardContent>
+        <div className="mb-4">
+          <input
+            type="search"
+            placeholder="Rechercher un produit..."
+            className="rounded-md border border-input px-3 py-1 text-sm w-full"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -69,7 +100,7 @@ export function ProductInventoryCard() {
               </tr>
             </thead>
             <tbody>
-              {demoProducts.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-muted/50">
                   <td className="py-2">{product.id}</td>
                   <td className="py-2">{product.name}</td>
@@ -80,6 +111,13 @@ export function ProductInventoryCard() {
                   </td>
                 </tr>
               ))}
+              {filteredProducts.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-muted-foreground">
+                    Aucun produit trouvé
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

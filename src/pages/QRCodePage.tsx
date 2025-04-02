@@ -16,16 +16,7 @@ Offrez-vous une sensation de bien-être incomparable avec les mouchoirs ZEN.
 ✅ 3 plis pour absorption maximale
 ✅ 80 mouchoirs par boîte
 ✅ Ultra-doux et résistants
-✅ Sans parfum
-
-🌱 Pourquoi choisir ZEN?
-🌱 Parfaits pour peaux sensibles
-🛡️ Usage unique hygiénique
-💚 Emballage écologique
-
-🏢 DRINX Côte d'Ivoire
-📞 07 97 29 XX 08
-🌐 www.zen-tissues.ci`;
+✅ Sans parfum`;
 
 export default function QRCodePage() {
   const [savedQRCodes, setSavedQRCodes] = useState<Array<{

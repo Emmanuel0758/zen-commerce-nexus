@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,18 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Product = {
   id: string;
@@ -21,7 +34,7 @@ type Product = {
   status: "lowstock" | "instock" | "outofstock";
 };
 
-const demoProducts: Product[] = [
+const initialProducts: Product[] = [
   {
     id: "1",
     name: "Zen Classic (500ml)",
@@ -73,6 +86,132 @@ const demoProducts: Product[] = [
 ];
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+    name: "",
+    sku: "",
+    price: "",
+    stock: 0,
+    status: "instock"
+  });
+  
+  const { toast } = useToast();
+
+  // Filtrer les produits selon la recherche
+  const filteredProducts = products.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Stats calculées
+  const inStockCount = products.filter(p => p.status === "instock").length;
+  const lowStockCount = products.filter(p => p.status === "lowstock").length;
+  const outOfStockCount = products.filter(p => p.status === "outofstock").length;
+
+  // Fonctions pour gérer les produits
+  const handleAddProduct = () => {
+    if (!newProduct.name || !newProduct.sku || !newProduct.price) {
+      toast({
+        title: "Informations incomplètes",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const stockNum = Number(newProduct.stock);
+    let productStatus: "lowstock" | "instock" | "outofstock" = "instock";
+    
+    if (stockNum <= 0) {
+      productStatus = "outofstock";
+    } else if (stockNum < 100) {
+      productStatus = "lowstock";
+    }
+
+    const newProductComplete: Product = {
+      id: (products.length + 1).toString(),
+      name: newProduct.name,
+      sku: newProduct.sku,
+      price: newProduct.price,
+      stock: stockNum,
+      status: productStatus
+    };
+
+    setProducts([...products, newProductComplete]);
+    setIsAddDialogOpen(false);
+    setNewProduct({
+      name: "",
+      sku: "",
+      price: "",
+      stock: 0,
+      status: "instock"
+    });
+
+    toast({
+      title: "Produit ajouté",
+      description: `${newProductComplete.name} a été ajouté avec succès`
+    });
+  };
+
+  const handleEditProduct = () => {
+    if (!currentProduct) return;
+    
+    const updatedProducts = products.map(p => 
+      p.id === currentProduct.id ? currentProduct : p
+    );
+    
+    setProducts(updatedProducts);
+    setIsEditDialogOpen(false);
+    
+    toast({
+      title: "Produit mis à jour",
+      description: `${currentProduct.name} a été mis à jour avec succès`
+    });
+  };
+
+  const handleDeleteProduct = () => {
+    if (!currentProduct) return;
+    
+    const updatedProducts = products.filter(p => p.id !== currentProduct.id);
+    setProducts(updatedProducts);
+    setIsDeleteDialogOpen(false);
+    
+    toast({
+      title: "Produit supprimé",
+      description: `${currentProduct.name} a été supprimé avec succès`
+    });
+  };
+
+  const handleEditClick = (product: Product) => {
+    setCurrentProduct(product);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (product: Product) => {
+    setCurrentProduct(product);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleExportProducts = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "zen-products.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    
+    toast({
+      title: "Export réussi",
+      description: "La liste des produits a été exportée avec succès"
+    });
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <SidebarNav />
@@ -85,7 +224,7 @@ export default function ProductsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExportProducts}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -104,7 +243,7 @@ export default function ProductsPage() {
               </svg>
               Exporter
             </Button>
-            <Button>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -128,25 +267,25 @@ export default function ProductsPage() {
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <div className="text-4xl font-bold text-zen-500">6</div>
+              <div className="text-4xl font-bold text-zen-500">{products.length}</div>
               <p className="text-sm text-muted-foreground">Produits actifs</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <div className="text-4xl font-bold text-green-500">3</div>
+              <div className="text-4xl font-bold text-green-500">{inStockCount}</div>
               <p className="text-sm text-muted-foreground">Produits en stock</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <div className="text-4xl font-bold text-amber-500">2</div>
+              <div className="text-4xl font-bold text-amber-500">{lowStockCount}</div>
               <p className="text-sm text-muted-foreground">Stock faible</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <div className="text-4xl font-bold text-red-500">1</div>
+              <div className="text-4xl font-bold text-red-500">{outOfStockCount}</div>
               <p className="text-sm text-muted-foreground">Rupture de stock</p>
             </CardContent>
           </Card>
@@ -160,6 +299,8 @@ export default function ProductsPage() {
                 type="search"
                 placeholder="Rechercher un produit..."
                 className="rounded-md border border-input px-3 py-1 text-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </CardHeader>
@@ -176,7 +317,7 @@ export default function ProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {demoProducts.map((product) => (
+                {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{product.sku}</TableCell>
@@ -187,10 +328,10 @@ export default function ProductsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>
                           Éditer
                         </Button>
-                        <Button variant="destructive" size="sm">
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(product)}>
                           Supprimer
                         </Button>
                       </div>
@@ -202,6 +343,167 @@ export default function ProductsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Ajouter Produit Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau produit</DialogTitle>
+            <DialogDescription>
+              Remplissez les informations pour ajouter un nouveau produit
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Nom</Label>
+              <Input
+                id="name"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="sku" className="text-right">Référence</Label>
+              <Input
+                id="sku"
+                value={newProduct.sku}
+                onChange={(e) => setNewProduct({...newProduct, sku: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">Prix</Label>
+              <Input
+                id="price"
+                value={newProduct.price}
+                onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                placeholder="0,00 €"
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="stock" className="text-right">Stock</Label>
+              <Input
+                id="stock"
+                type="number"
+                value={newProduct.stock}
+                onChange={(e) => setNewProduct({...newProduct, stock: parseInt(e.target.value) || 0})}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleAddProduct}>Ajouter</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Éditer Produit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier un produit</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du produit
+            </DialogDescription>
+          </DialogHeader>
+          {currentProduct && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-name" className="text-right">Nom</Label>
+                <Input
+                  id="edit-name"
+                  value={currentProduct.name}
+                  onChange={(e) => setCurrentProduct({...currentProduct, name: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-sku" className="text-right">Référence</Label>
+                <Input
+                  id="edit-sku"
+                  value={currentProduct.sku}
+                  onChange={(e) => setCurrentProduct({...currentProduct, sku: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-price" className="text-right">Prix</Label>
+                <Input
+                  id="edit-price"
+                  value={currentProduct.price}
+                  onChange={(e) => setCurrentProduct({...currentProduct, price: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-stock" className="text-right">Stock</Label>
+                <Input
+                  id="edit-stock"
+                  type="number"
+                  value={currentProduct.stock}
+                  onChange={(e) => {
+                    const stock = parseInt(e.target.value) || 0;
+                    let status = currentProduct.status;
+                    if (stock <= 0) status = "outofstock";
+                    else if (stock < 100) status = "lowstock";
+                    else status = "instock";
+                    
+                    setCurrentProduct({...currentProduct, stock, status});
+                  }}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-status" className="text-right">Statut</Label>
+                <Select 
+                  value={currentProduct.status}
+                  onValueChange={(value: "lowstock" | "instock" | "outofstock") => 
+                    setCurrentProduct({...currentProduct, status: value})
+                  }
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Sélectionner un statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="instock">En stock</SelectItem>
+                    <SelectItem value="lowstock">Stock faible</SelectItem>
+                    <SelectItem value="outofstock">Rupture de stock</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleEditProduct}>Sauvegarder</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Supprimer Produit Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer un produit</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          {currentProduct && (
+            <div className="py-4">
+              <p><strong>Produit :</strong> {currentProduct.name}</p>
+              <p><strong>Référence :</strong> {currentProduct.sku}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDeleteProduct}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

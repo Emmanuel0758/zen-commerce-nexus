@@ -1,8 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { Trash, Download, Eye, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -12,7 +9,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import QRCode from "react-qr-code";
+import { Trash, Download, Eye, Copy, Search, Filter, QrCode, Calendar } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface QRCodeData {
   id: string;
@@ -30,6 +31,8 @@ export const QRCodeHistory = () => {
   const [history, setHistory] = useState<QRCodeData[]>([]);
   const [selectedQR, setSelectedQR] = useState<QRCodeData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "url" | "text" | "email" | "wifi" | "phone">("all");
 
   // Charger l'historique depuis localStorage
   useEffect(() => {
@@ -86,7 +89,6 @@ export const QRCodeHistory = () => {
         description: "Le QR code a été téléchargé avec succès"
       });
     } else {
-      // Si l'image prérendue n'est pas disponible, générer à nouveau
       const qrElement = document.getElementById(`qr-display-${qrCode.id}`)?.querySelector('svg');
       if (!qrElement) {
         toast({
@@ -142,87 +144,164 @@ export const QRCodeHistory = () => {
       });
   };
 
+  // Filtrer l'historique
+  const filteredHistory = history.filter(qrCode => {
+    const matchesSearch = qrCode.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (qrCode.label && qrCode.label.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesType = typeFilter === "all" || qrCode.type === typeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  // Obtenir l'icône pour le type de QR code
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "url": return <QrCode className="h-4 w-4" />;
+      case "email": return <QrCode className="h-4 w-4" />;
+      case "phone": return <QrCode className="h-4 w-4" />;
+      case "wifi": return <QrCode className="h-4 w-4" />;
+      default: return <QrCode className="h-4 w-4" />;
+    }
+  };
+
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Historique des QR Codes</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-6">
-          {history.length === 0 ? (
-            <p className="text-center text-muted-foreground">
-              Aucun QR code généré pour l'instant
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un QR code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-background/50"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as "all" | "url" | "text" | "email" | "wifi" | "phone")}>
+            <SelectTrigger className="w-[180px] bg-background/50">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <SelectValue placeholder="Filtrer par type" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les types</SelectItem>
+              <SelectItem value="url">URL</SelectItem>
+              <SelectItem value="text">Texte</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="phone">Téléphone</SelectItem>
+              <SelectItem value="wifi">WiFi</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {filteredHistory.length === 0 ? (
+          <div className="text-center p-8 border-2 border-dashed rounded-lg">
+            <QrCode className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+            <p className="mt-4 text-muted-foreground">
+              {searchTerm || typeFilter !== "all" 
+                ? "Aucun QR code trouvé correspondant à votre recherche"
+                : "Aucun QR code généré pour l'instant"}
             </p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {history.map((qrCode) => (
-                <Card key={qrCode.id} className="overflow-hidden">
-                  <div className="p-4 flex flex-col items-center">
-                    <div 
-                      id={`qr-display-${qrCode.id}`} 
-                      className="mb-2 bg-white p-2 rounded-md"
-                    >
-                      {qrCode.img ? (
-                        <img 
-                          src={qrCode.img} 
-                          alt={qrCode.label || "QR Code"} 
-                          className="w-32 h-32 object-contain"
-                        />
-                      ) : (
-                        <QRCode 
-                          value={qrCode.content}
-                          size={128}
-                          fgColor={qrCode.color || "#000000"}
-                        />
-                      )}
-                    </div>
-                    <h3 className="font-medium text-center line-clamp-1">
+            {(searchTerm || typeFilter !== "all") && (
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  setSearchTerm('');
+                  setTypeFilter('all');
+                }}
+              >
+                Effacer les filtres
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredHistory.map((qrCode) => (
+              <div key={qrCode.id} className="border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow">
+                <div className="p-4 flex flex-col items-center">
+                  <div 
+                    id={`qr-display-${qrCode.id}`} 
+                    className="mb-3 bg-white p-2 rounded-md shadow-sm"
+                  >
+                    {qrCode.img ? (
+                      <img 
+                        src={qrCode.img} 
+                        alt={qrCode.label || "QR Code"} 
+                        className="w-32 h-32 object-contain"
+                      />
+                    ) : (
+                      <QRCode 
+                        value={qrCode.content}
+                        size={128}
+                        fgColor={qrCode.color || "#000000"}
+                      />
+                    )}
+                  </div>
+                  
+                  <div className="w-full text-center">
+                    <h3 className="font-medium text-center line-clamp-1 mb-1">
                       {qrCode.label || "QR Code"}
                     </h3>
-                    <p className="text-xs text-muted-foreground text-center mb-2">
-                      {formatDate(qrCode.createdAt)}
-                    </p>
-                    <div className="w-full border-t pt-2 flex justify-center gap-1">
-                      <Button 
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleView(qrCode)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleCopy(qrCode.content)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDownload(qrCode)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(qrCode.id)}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-3">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatDate(qrCode.createdAt)}</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs mb-3">
+                      {getTypeIcon(qrCode.type)}
+                      <span>
+                        {qrCode.type === "url" ? "Lien URL" : 
+                         qrCode.type === "email" ? "Adresse email" : 
+                         qrCode.type === "phone" ? "Numéro de téléphone" : 
+                         qrCode.type === "wifi" ? "Configuration WiFi" : "Texte"}
+                      </span>
                     </div>
                   </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  
+                  <div className="w-full border-t pt-3 flex justify-center gap-1">
+                    <Button 
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleView(qrCode)}
+                      className="rounded-full"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleCopy(qrCode.content)}
+                      className="rounded-full"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDownload(qrCode)}
+                      className="rounded-full"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(qrCode.id)}
+                      className="rounded-full text-destructive hover:text-destructive"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Dialogue de détails */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{selectedQR?.label || "Détails du QR Code"}</DialogTitle>
             <DialogDescription>
@@ -230,14 +309,14 @@ export const QRCodeHistory = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex justify-center p-4 bg-white rounded-md">
+          <div className="flex justify-center py-4 bg-white rounded-lg shadow-inner mx-auto max-w-xs">
             {selectedQR && (
               <div className="flex flex-col items-center">
                 {selectedQR.img ? (
                   <img 
                     src={selectedQR.img} 
                     alt={selectedQR.label || "QR Code"} 
-                    className="w-48 h-48 object-contain mb-4"
+                    className="w-48 h-48 object-contain"
                   />
                 ) : (
                   <QRCode 
@@ -250,29 +329,36 @@ export const QRCodeHistory = () => {
             )}
           </div>
           
-          <div className="grid gap-2">
-            <div>
-              <p className="text-sm font-medium">Type:</p>
-              <p className="text-sm">{selectedQR?.type}</p>
+          <div className="grid gap-3 my-2">
+            <div className="bg-muted/50 p-2 rounded">
+              <Label className="text-xs text-muted-foreground">Type</Label>
+              <p className="font-medium">
+                {selectedQR?.type === "url" ? "Lien URL" : 
+                 selectedQR?.type === "email" ? "Adresse email" : 
+                 selectedQR?.type === "phone" ? "Numéro de téléphone" : 
+                 selectedQR?.type === "wifi" ? "Configuration WiFi" : "Texte"}
+              </p>
             </div>
-            <div>
-              <p className="text-sm font-medium">Contenu:</p>
-              <p className="text-sm break-all">{selectedQR?.content}</p>
+            <div className="bg-muted/50 p-2 rounded">
+              <Label className="text-xs text-muted-foreground">Contenu</Label>
+              <p className="font-medium break-all">{selectedQR?.content}</p>
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex justify-between sm:justify-between">
             <Button 
               variant="outline" 
               onClick={() => handleCopy(selectedQR?.content || "")}
+              className="gap-2"
             >
-              <Copy className="mr-2 h-4 w-4" />
+              <Copy className="h-4 w-4" />
               Copier
             </Button>
             <Button 
               onClick={() => selectedQR && handleDownload(selectedQR)}
+              className="gap-2"
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="h-4 w-4" />
               Télécharger
             </Button>
           </DialogFooter>

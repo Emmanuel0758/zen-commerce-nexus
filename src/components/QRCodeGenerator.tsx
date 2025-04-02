@@ -1,14 +1,14 @@
-
 // The file contains JSX but uses the type "warning" which is not allowed
 // Will update any occurrences of "warning" variant to "destructive" which is valid
 import React, { useState } from 'react';
 import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import QRCode from "react-qr-code";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link, QrCode, Mail, Phone, Wifi, Text, Download, Save, Settings } from "lucide-react";
 
 interface QRCodeData {
   id: string;
@@ -188,106 +188,145 @@ export const QRCodeGenerator = () => {
     img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
   };
 
+  // Fonction pour obtenir l'icône appropriée selon le type
+  const getTypeIcon = (type: "url" | "text" | "email" | "wifi" | "phone") => {
+    switch (type) {
+      case "url": return <Link className="h-4 w-4" />;
+      case "email": return <Mail className="h-4 w-4" />;
+      case "phone": return <Phone className="h-4 w-4" />;
+      case "wifi": return <Wifi className="h-4 w-4" />;
+      case "text": return <Text className="h-4 w-4" />;
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Générateur de QR Code</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="grid gap-2">
-          <Label htmlFor="qrType">Type de contenu</Label>
-          <Select
-            value={qrType}
-            onValueChange={(value: "url" | "text" | "email" | "wifi" | "phone") => {
-              setQrType(value);
-              setQrValue(""); // Reset value when changing type
-            }}
-          >
-            <SelectTrigger id="qrType">
-              <SelectValue placeholder="Type de contenu" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="url">URL</SelectItem>
-              <SelectItem value="text">Texte</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="phone">Numéro de téléphone</SelectItem>
-              <SelectItem value="wifi">Configuration WiFi</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="grid gap-6">
+      <Tabs defaultValue="url" value={qrType} onValueChange={(value) => setQrType(value as "url" | "text" | "email" | "wifi" | "phone")}>
+        <TabsList className="grid grid-cols-5 mb-4">
+          <TabsTrigger value="url" className="flex items-center gap-2">
+            <Link className="h-4 w-4" />
+            <span className="hidden sm:inline">URL</span>
+          </TabsTrigger>
+          <TabsTrigger value="text" className="flex items-center gap-2">
+            <Text className="h-4 w-4" />
+            <span className="hidden sm:inline">Texte</span>
+          </TabsTrigger>
+          <TabsTrigger value="email" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            <span className="hidden sm:inline">Email</span>
+          </TabsTrigger>
+          <TabsTrigger value="phone" className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            <span className="hidden sm:inline">Téléphone</span>
+          </TabsTrigger>
+          <TabsTrigger value="wifi" className="flex items-center gap-2">
+            <Wifi className="h-4 w-4" />
+            <span className="hidden sm:inline">WiFi</span>
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="grid gap-2">
-          <Label htmlFor="qrContent">{getInputLabel()}</Label>
-          <Input
-            id="qrContent"
-            value={qrValue}
-            onChange={(e) => handleContentChange(e.target.value)}
-            placeholder={getPlaceholder()}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="qrLabel">Étiquette (optionnelle)</Label>
-          <Input
-            id="qrLabel"
-            value={qrLabel}
-            onChange={(e) => setQrLabel(e.target.value)}
-            placeholder="Description du QR code"
-          />
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="qrSize">Taille (pixels)</Label>
-            <div className="flex gap-2 items-center">
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="grid gap-2">
+              <Label htmlFor="qrContent" className="flex items-center gap-2">
+                {getTypeIcon(qrType)} {getInputLabel()}
+              </Label>
               <Input
-                id="qrSize"
-                type="number"
-                min="100"
-                max="500"
-                value={qrSize}
-                onChange={(e) => setQrSize(parseInt(e.target.value, 10))}
+                id="qrContent"
+                value={qrValue}
+                onChange={(e) => handleContentChange(e.target.value)}
+                placeholder={getPlaceholder()}
+                className="bg-background/50"
               />
-              <span className="text-sm">{qrSize}px</span>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="qrLabel" className="flex items-center gap-2">
+                <QrCode className="h-4 w-4" /> Étiquette (optionnelle)
+              </Label>
+              <Input
+                id="qrLabel"
+                value={qrLabel}
+                onChange={(e) => setQrLabel(e.target.value)}
+                placeholder="Description du QR code"
+                className="bg-background/50"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="qrSize" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" /> Taille (pixels)
+              </Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="qrSize"
+                  type="range"
+                  min="100"
+                  max="500"
+                  value={qrSize}
+                  onChange={(e) => setQrSize(parseInt(e.target.value, 10))}
+                  className="flex-grow"
+                />
+                <span className="text-sm font-medium w-16 text-center">{qrSize}px</span>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="qrColor" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" /> Couleur
+              </Label>
+              <div className="flex gap-2 items-center">
+                <input
+                  id="qrColor"
+                  type="color"
+                  value={qrColor}
+                  onChange={(e) => setQrColor(e.target.value)}
+                  className="h-10 w-12 p-0 border-0 rounded"
+                />
+                <Input 
+                  value={qrColor}
+                  onChange={(e) => setQrColor(e.target.value)}
+                  className="flex-grow bg-background/50"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="qrColor">Couleur</Label>
-            <div className="flex gap-2 items-center">
-              <input
-                id="qrColor"
-                type="color"
-                value={qrColor}
-                onChange={(e) => setQrColor(e.target.value)}
-                className="h-10 w-12 p-0 border-0"
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div 
+              id="qrcode" 
+              className="p-4 bg-white rounded-lg shadow-md flex justify-center items-center"
+              style={{ width: `${qrSize + 32}px`, height: `${qrSize + 32}px` }}
+            >
+              <QRCode 
+                value={getFormattedContent() || " "}
+                size={qrSize} 
+                fgColor={qrColor}
+                className="rounded"
               />
-              <Input 
-                value={qrColor}
-                onChange={(e) => setQrColor(e.target.value)}
-                className="flex-grow"
-              />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-1">
+                {qrLabel || "QR Code"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {qrSize}x{qrSize} pixels
+              </p>
+            </div>
+
+            <div className="flex gap-2 mt-4 w-full">
+              <Button onClick={handleGenerateQR} className="flex-1 gap-2">
+                <Save className="h-4 w-4" />
+                Sauvegarder
+              </Button>
+              <Button onClick={handleDownloadQR} variant="outline" className="flex-1 gap-2">
+                <Download className="h-4 w-4" />
+                Télécharger
+              </Button>
             </div>
           </div>
         </div>
-
-        <div id="qrcode" className="flex justify-center my-4">
-          <QRCode 
-            value={getFormattedContent() || " "}
-            size={qrSize} 
-            fgColor={qrColor}
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Button onClick={handleGenerateQR} className="flex-1">
-            Générer
-          </Button>
-          <Button onClick={handleDownloadQR} variant="outline" className="flex-1">
-            Télécharger
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </Tabs>
+    </div>
   );
 };

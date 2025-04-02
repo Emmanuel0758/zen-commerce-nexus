@@ -10,11 +10,15 @@ export function DeliveryMapCard() {
         <div className="flex items-center space-x-2">
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
-            <span className="text-xs">En cours (5)</span>
+            <span className="text-xs">En cours (3)</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 rounded-full bg-amber-500 mr-1"></div>
-            <span className="text-xs">Retardé (2)</span>
+            <span className="text-xs">Retardé (1)</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
+            <span className="text-xs">Prêt (1)</span>
           </div>
         </div>
       </CardHeader>

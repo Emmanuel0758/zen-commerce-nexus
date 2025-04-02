@@ -34,8 +34,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, Plus, FileDown, Search, Filter } from "lucide-react";
+import { Download, FileDown } from "lucide-react";
 import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
 import { useAppSettings } from "@/hooks/use-app-settings";
 
 type Order = {
@@ -113,6 +114,17 @@ const demoOrders: Order[] = [
     status: "completed",
   },
 ];
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => any;
+    lastAutoTable: { finalY: number };
+    internal: {
+      getNumberOfPages: () => number;
+      pageSize: { width: number, height: number };
+    };
+  }
+}
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>(demoOrders);
@@ -328,52 +340,45 @@ export default function OrdersPage() {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     
-    doc.line(15, 105, 195, 105);
-    doc.text('Description', 17, 112);
-    doc.text('Qté', 100, 112);
-    doc.text('Prix unitaire', 140, 112);
-    doc.text('Total', 190, 112);
-    doc.line(15, 115, 195, 115);
+    doc.autoTable({
+      startY: 105,
+      head: [['Description', 'Qté', 'Prix unitaire', 'Total']],
+      body: [
+        ['Zen Classic (500ml)', '2', '9 999 FCFA', '19 998 FCFA'],
+        ...(order.items > 1 ? [['Zen Boost (250ml)', '1', '7 250 FCFA', '7 250 FCFA']] : []),
+        ...(order.items > 2 ? [['Zen Relax (1L)', '1', '14 995 FCFA', '14 995 FCFA']] : [])
+      ],
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 20, halign: 'center' },
+        2: { cellWidth: 40, halign: 'right' },
+        3: { cellWidth: 40, halign: 'right' }
+      }
+    });
     
-    let y = 122;
-    let totalAmount = 0;
+    const finalY = doc.lastAutoTable.finalY + 15;
     
-    doc.setFont('helvetica', 'normal');
-    doc.text('Zen Classic (500ml)', 17, y);
-    doc.text('2', 100, y);
-    doc.text('9 999 FCFA', 140, y);
-    doc.text('19 998 FCFA', 190, y);
-    totalAmount += 19998;
-    
-    if (order.items > 1) {
-      y += 10;
-      doc.text('Zen Boost (250ml)', 17, y);
-      doc.text('1', 100, y);
-      doc.text('7 250 FCFA', 140, y);
-      doc.text('7 250 FCFA', 190, y);
-      totalAmount += 7250;
-    }
-    
-    if (order.items > 2) {
-      y += 10;
-      doc.text('Zen Relax (1L)', 17, y);
-      doc.text('1', 100, y);
-      doc.text('14 995 FCFA', 140, y);
-      doc.text('14 995 FCFA', 190, y);
-      totalAmount += 14995;
-    }
-    
-    y += 20;
-    doc.line(15, y - 5, 195, y - 5);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total', 150, y);
-    doc.text(`${totalAmount.toLocaleString('fr-FR')} FCFA`, 190, y);
+    doc.text('Total', 150, finalY);
+    doc.text(order.total, 180, finalY, { align: 'right' });
     
-    y += 40;
+    // Footer
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('Merci pour votre commande!', 105, y);
-    doc.text(`${settings.appName} - SIRET: 12345678900000`, 105, y + 5);
+    doc.text('Merci pour votre commande!', 105, finalY + 20, { align: 'center' });
+    doc.text(`${settings.appName} - SIRET: 12345678900000`, 105, finalY + 25, { align: 'center' });
+    
+    // Page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${settings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+    }
     
     doc.save(`facture-${order.id}.pdf`);
     
@@ -481,7 +486,7 @@ export default function OrdersPage() {
             <CardContent className="flex flex-col items-center justify-center p-6">
               <div className="text-3xl font-bold text-red-500">{cancelledCount + onHoldCount}</div>
               <p className="text-sm text-muted-foreground">Annulées/En attente</p>
-            </CardContent>
+            </Card>
           </Card>
         </section>
 
@@ -508,7 +513,7 @@ export default function OrdersPage() {
               <Input
                 type="search"
                 placeholder="Rechercher..."
-                className="rounded-md border border-input px-3 py-1 text-sm"
+                className="rounded-md border border-input px-3 py-1 text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

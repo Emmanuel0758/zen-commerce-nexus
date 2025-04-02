@@ -3,6 +3,18 @@ import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 
+// Type augmentation for jsPDF with autotable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => any;
+    lastAutoTable: { finalY: number };
+    internal: {
+      getNumberOfPages: () => number;
+      pageSize: { width: number, height: number };
+    };
+  }
+}
+
 type ExportFormat = "json" | "pdf" | "excel";
 
 interface ExportableData {
@@ -139,7 +151,6 @@ const exportPDF = (data: ExportableData, fileName: string): boolean => {
       const headers = Object.keys(data[0]);
       const rows = data.map(item => headers.map(key => item[key]?.toString() || ''));
       
-      // @ts-ignore - jspdf-autotable types
       doc.autoTable({
         head: [headers],
         body: rows,
@@ -163,7 +174,6 @@ const exportPDF = (data: ExportableData, fileName: string): boolean => {
           const headers = Object.keys(value[0]);
           const rows = value.map(item => headers.map(k => item[k]?.toString() || ''));
           
-          // @ts-ignore - jspdf-autotable types
           doc.autoTable({
             head: [headers],
             body: rows,
@@ -174,10 +184,18 @@ const exportPDF = (data: ExportableData, fileName: string): boolean => {
           });
           
           // Mettre à jour la position Y pour le prochain tableau
-          // @ts-ignore - lastAutoTable exists on the doc object added by autotable
           yPos = doc.lastAutoTable.finalY + 15;
         }
       }
+    }
+    
+    // Pagination
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Page ${i} sur ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
     }
     
     // Enregistrer le PDF
@@ -221,13 +239,3 @@ export const useDataExport = () => {
   
   return { handleExport };
 };
-
-/**
- * Types pour jsPDF-autotable
- */
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => any;
-    lastAutoTable: { finalY: number };
-  }
-}

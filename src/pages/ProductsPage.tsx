@@ -30,8 +30,21 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { FileText, FileSpreadsheet, FileDown } from "lucide-react";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
 import { exportData } from "@/utils/exportUtils";
 import { useAppSettings } from "@/hooks/use-app-settings";
+
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => any;
+    lastAutoTable: { finalY: number };
+    internal: {
+      getNumberOfPages: () => number;
+      pageSize: { width: number, height: number };
+    };
+  }
+}
 
 type Product = {
   id: string;
@@ -444,7 +457,7 @@ export default function ProductsPage() {
             <CardContent className="flex flex-col items-center justify-center p-6">
               <div className="text-4xl font-bold text-red-500">{outOfStockCount}</div>
               <p className="text-sm text-muted-foreground">Rupture de stock</p>
-            </CardContent>
+            </Card>
           </Card>
         </section>
 
@@ -455,7 +468,7 @@ export default function ProductsPage() {
               <Input
                 type="search"
                 placeholder="Rechercher un produit..."
-                className="rounded-md border border-input px-3 py-1 text-sm"
+                className="rounded-md border border-input px-3 py-1 text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

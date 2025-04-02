@@ -39,7 +39,7 @@ const initialProducts: Product[] = [
     id: "1",
     name: "Zen Classic (500ml)",
     sku: "ZEN-CL-500",
-    price: "19,99 €",
+    price: "9 999 FCFA",
     stock: 85,
     status: "lowstock",
   },
@@ -47,7 +47,7 @@ const initialProducts: Product[] = [
     id: "2",
     name: "Zen Boost (250ml)",
     sku: "ZEN-BO-250",
-    price: "14,50 €",
+    price: "7 250 FCFA",
     stock: 210,
     status: "instock",
   },
@@ -55,7 +55,7 @@ const initialProducts: Product[] = [
     id: "3",
     name: "Zen Relax (1L)",
     sku: "ZEN-RX-1000",
-    price: "29,99 €",
+    price: "14 995 FCFA",
     stock: 0,
     status: "outofstock",
   },
@@ -63,7 +63,7 @@ const initialProducts: Product[] = [
     id: "4",
     name: "Zen Flow (750ml)",
     sku: "ZEN-FL-750",
-    price: "24,99 €",
+    price: "12 495 FCFA",
     stock: 150,
     status: "instock",
   },
@@ -71,7 +71,7 @@ const initialProducts: Product[] = [
     id: "5",
     name: "Zen Ultimate (500ml)",
     sku: "ZEN-UL-500",
-    price: "34,99 €",
+    price: "17 495 FCFA",
     stock: 65,
     status: "lowstock",
   },
@@ -79,7 +79,7 @@ const initialProducts: Product[] = [
     id: "6",
     name: "Zen Mini (100ml)",
     sku: "ZEN-MI-100",
-    price: "9,99 €",
+    price: "4 995 FCFA",
     stock: 320,
     status: "instock",
   },
@@ -88,6 +88,8 @@ const initialProducts: Product[] = [
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priceSort, setPriceSort] = useState<string>("none");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -102,11 +104,25 @@ export default function ProductsPage() {
   
   const { toast } = useToast();
 
-  // Filtrer les produits selon la recherche
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtrer et trier les produits
+  const filteredProducts = products.filter(product => {
+    // Appliquer recherche par texte
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      product.sku.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Appliquer filtre par statut
+    const matchesStatus = statusFilter === "all" || product.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Appliquer le tri par prix
+    if (priceSort === "asc") {
+      return parseFloat(a.price.replace(/[^\d]/g, '')) - parseFloat(b.price.replace(/[^\d]/g, ''));
+    } else if (priceSort === "desc") {
+      return parseFloat(b.price.replace(/[^\d]/g, '')) - parseFloat(a.price.replace(/[^\d]/g, ''));
+    }
+    return 0;
+  });
 
   // Stats calculées
   const inStockCount = products.filter(p => p.status === "instock").length;
@@ -137,7 +153,7 @@ export default function ProductsPage() {
       id: (products.length + 1).toString(),
       name: newProduct.name,
       sku: newProduct.sku,
-      price: newProduct.price,
+      price: newProduct.price.endsWith('FCFA') ? newProduct.price : `${newProduct.price} FCFA`,
       stock: stockNum,
       status: productStatus
     };
@@ -160,6 +176,11 @@ export default function ProductsPage() {
 
   const handleEditProduct = () => {
     if (!currentProduct) return;
+    
+    // S'assurer que le prix inclut "FCFA"
+    if (currentProduct.price && !currentProduct.price.includes('FCFA')) {
+      currentProduct.price = `${currentProduct.price} FCFA`;
+    }
     
     const updatedProducts = products.map(p => 
       p.id === currentProduct.id ? currentProduct : p
@@ -209,6 +230,16 @@ export default function ProductsPage() {
     toast({
       title: "Export réussi",
       description: "La liste des produits a été exportée avec succès"
+    });
+  };
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setPriceSort("none");
+    toast({
+      title: "Filtres réinitialisés",
+      description: "Tous les filtres ont été réinitialisés"
     });
   };
 
@@ -305,6 +336,40 @@ export default function ProductsPage() {
             </div>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex flex-wrap gap-2">
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrer par statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="instock">En stock</SelectItem>
+                  <SelectItem value="lowstock">Stock faible</SelectItem>
+                  <SelectItem value="outofstock">Rupture de stock</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select
+                value={priceSort}
+                onValueChange={(value) => setPriceSort(value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Trier par prix" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Non trié</SelectItem>
+                  <SelectItem value="asc">Prix croissant</SelectItem>
+                  <SelectItem value="desc">Prix décroissant</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button variant="ghost" onClick={resetFilters}>
+                Réinitialiser les filtres
+              </Button>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -338,6 +403,13 @@ export default function ProductsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+                {filteredProducts.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                      Aucun produit trouvé
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -378,7 +450,7 @@ export default function ProductsPage() {
                 id="price"
                 value={newProduct.price}
                 onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                placeholder="0,00 €"
+                placeholder="0 FCFA"
                 className="col-span-3"
               />
             </div>

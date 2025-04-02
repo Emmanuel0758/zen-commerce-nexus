@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Product = {
   id: string;
@@ -17,28 +18,28 @@ const demoProducts: Product[] = [
   {
     id: "ZEN-CL-500",
     name: "Zen Classic (500ml)",
-    price: "19,99 €",
+    price: "9 999 FCFA",
     stock: 85,
     status: "lowstock",
   },
   {
     id: "ZEN-BO-250",
     name: "Zen Boost (250ml)",
-    price: "14,50 €",
+    price: "7 250 FCFA",
     stock: 210,
     status: "instock",
   },
   {
     id: "ZEN-RX-1000",
     name: "Zen Relax (1L)",
-    price: "29,99 €",
+    price: "14 995 FCFA",
     stock: 0,
     status: "outofstock",
   },
   {
     id: "ZEN-FL-750",
     name: "Zen Flow (750ml)",
-    price: "24,99 €",
+    price: "12 495 FCFA",
     stock: 150,
     status: "instock",
   },
@@ -46,12 +47,19 @@ const demoProducts: Product[] = [
 
 export function ProductInventoryCard() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
   
-  const filteredProducts = demoProducts.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = demoProducts.filter(product => {
+    // Appliquer recherche par texte
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Appliquer filtre par statut
+    const matchesStatus = statusFilter === "all" || product.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <Card>
@@ -79,14 +87,30 @@ export function ProductInventoryCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <input
-            type="search"
-            placeholder="Rechercher un produit..."
-            className="rounded-md border border-input px-3 py-1 text-sm w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="mb-4 space-y-2">
+          <div className="flex flex-col md:flex-row gap-2">
+            <input
+              type="search"
+              placeholder="Rechercher un produit..."
+              className="rounded-md border border-input px-3 py-1 text-sm w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value)}
+            >
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filtrer par statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="instock">En stock</SelectItem>
+                <SelectItem value="lowstock">Stock faible</SelectItem>
+                <SelectItem value="outofstock">Rupture de stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

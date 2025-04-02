@@ -4,8 +4,29 @@ import { Layout } from "@/components/Layout";
 import { QRCodeGenerator } from "@/components/QRCodeGenerator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { QRCodeHistory } from "@/components/QRCodeHistory";
 
 export default function QRCodePage() {
+  const [savedQRCodes, setSavedQRCodes] = useState<Array<{
+    id: string;
+    value: string;
+    name: string;
+    color: string;
+    bgColor: string;
+    size: string;
+    date: Date;
+  }>>([]);
+
+  const handleSaveQRCode = (qrCode: any) => {
+    setSavedQRCodes(prev => [
+      {
+        ...qrCode,
+        date: new Date()
+      },
+      ...prev
+    ]);
+  };
+
   return (
     <Layout>
       <div className="container py-6">
@@ -80,15 +101,7 @@ Commander Maintenant`}
           </TabsContent>
           
           <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle>Historique des QR codes</CardTitle>
-                <CardDescription>Liste de tous les QR codes générés</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center py-8 text-muted-foreground">Aucun historique disponible</p>
-              </CardContent>
-            </Card>
+            <QRCodeHistory />
           </TabsContent>
         </Tabs>
       </div>

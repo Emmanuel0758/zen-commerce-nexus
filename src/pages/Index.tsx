@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { StatCard } from "@/components/StatCard";
 import { SalesChart } from "@/components/SalesChart";
@@ -7,6 +8,29 @@ import { ProductInventoryCard } from "@/components/ProductInventoryCard";
 import { DeliveryMapCard } from "@/components/DeliveryMapCard";
 
 export default function Index() {
+  const [currencySymbol, setCurrencySymbol] = useState("€");
+  
+  useEffect(() => {
+    // Get saved currency from localStorage or use default
+    const savedCurrencySymbol = localStorage.getItem('currencySymbol');
+    if (savedCurrencySymbol) {
+      setCurrencySymbol(savedCurrencySymbol);
+    }
+    
+    // Listen for currency changes from settings
+    const handleSettingsChange = (event: CustomEvent) => {
+      if (event.detail && event.detail.currencySymbol) {
+        setCurrencySymbol(event.detail.currencySymbol);
+      }
+    };
+    
+    window.addEventListener('app-settings-changed', handleSettingsChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('app-settings-changed', handleSettingsChange as EventListener);
+    };
+  }, []);
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <SidebarNav />
@@ -21,7 +45,7 @@ export default function Index() {
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <StatCard
             title="Ventes Aujourd'hui"
-            value="1 250 €"
+            value={`1 250 ${currencySymbol}`}
             trend={8.2}
             type="sales"
             icon={

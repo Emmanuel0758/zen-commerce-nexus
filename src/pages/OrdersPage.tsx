@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Download } from "@/components/ui/icons";
 
 type Order = {
   id: string;
@@ -122,26 +122,21 @@ export default function OrdersPage() {
 
   const { toast } = useToast();
 
-  // Filtrer les commandes
   const filteredOrders = orders.filter(order => {
-    // Appliquer recherche par texte
     const matchesSearch = order.customer.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          order.id.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Appliquer filtre par statut
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  // Statistiques calculées
   const pendingCount = orders.filter(o => o.status === "pending").length;
   const processingCount = orders.filter(o => o.status === "processing").length;
   const completedCount = orders.filter(o => o.status === "completed").length;
   const cancelledCount = orders.filter(o => o.status === "cancelled").length;
   const onHoldCount = orders.filter(o => o.status === "onhold").length;
 
-  // Fonctions pour gérer les commandes
   const handleViewOrder = (order: Order) => {
     setCurrentOrder(order);
     setIsViewOrderDialogOpen(true);
@@ -163,7 +158,6 @@ export default function OrdersPage() {
       downloadAnchorNode.remove();
     } 
     else if (format === "pdf") {
-      // Simulation d'export PDF
       setTimeout(() => {
         toast({
           title: "Export PDF en cours",
@@ -179,7 +173,6 @@ export default function OrdersPage() {
       }, 500);
     } 
     else if (format === "excel") {
-      // Simulation d'export Excel
       let csvContent = "ID,Client,Date,Articles,Total,Statut\n";
       
       orders.forEach(order => {
@@ -212,6 +205,21 @@ export default function OrdersPage() {
       description: "La création de nouvelles commandes sera disponible prochainement"
     });
     setIsNewOrderDialogOpen(false);
+  };
+
+  const handleDownloadInvoice = (order: Order) => {
+    toast({
+      title: "Génération de facture",
+      description: "Préparation du fichier PDF..."
+    });
+    
+    setTimeout(() => {
+      toast({
+        title: "Facture téléchargée",
+        description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format PDF`
+      });
+      setIsInvoiceDialogOpen(false);
+    }, 1500);
   };
 
   return (
@@ -392,7 +400,6 @@ export default function OrdersPage() {
         </Card>
       </div>
 
-      {/* Dialogue Voir Commande */}
       <Dialog open={isViewOrderDialogOpen} onOpenChange={setIsViewOrderDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -449,7 +456,6 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogue Facture */}
       <Dialog open={isInvoiceDialogOpen} onOpenChange={setIsInvoiceDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -523,13 +529,11 @@ export default function OrdersPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              toast({
-                title: "Facture téléchargée",
-                description: "La facture a été téléchargée au format PDF"
-              });
-              setIsInvoiceDialogOpen(false);
-            }}>
+            <Button 
+              variant="outline" 
+              onClick={() => handleDownloadInvoice(currentOrder!)}
+            >
+              <Download className="h-4 w-4 mr-2" />
               Télécharger
             </Button>
             <Button onClick={() => setIsInvoiceDialogOpen(false)}>
@@ -539,7 +543,6 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogue Nouvelle Commande */}
       <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
         <DialogContent>
           <DialogHeader>

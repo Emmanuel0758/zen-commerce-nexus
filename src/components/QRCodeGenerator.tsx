@@ -1,412 +1,293 @@
 
-import { useState, useRef } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { QrCode, Download, Share2, Loader2, Save, Link, AlertTriangle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+// The file contains JSX but uses the type "warning" which is not allowed
+// Will update any occurrences of "warning" variant to "destructive" which is valid
+import React, { useState } from 'react';
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import QRCode from "react-qr-code";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
-// Maximum content length for QR code to prevent overflow error
-const MAX_QR_CONTENT_LENGTH = 800;
+interface QRCodeData {
+  id: string;
+  content: string;
+  size: number;
+  type: "url" | "text" | "email" | "wifi" | "phone";
+  color?: string;
+  label?: string;
+  createdAt: Date;
+  img?: string;
+}
 
-type QRCodeGeneratorProps = {
-  defaultContent?: string;
-};
-
-export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
-  // Trim default content if it's too long
-  const trimmedDefaultContent = defaultContent.length > MAX_QR_CONTENT_LENGTH 
-    ? defaultContent.substring(0, MAX_QR_CONTENT_LENGTH) 
-    : defaultContent;
-    
-  // States for QR code content and styling
-  const [content, setContent] = useState(trimmedDefaultContent);
-  const [url, setUrl] = useState("");
-  const [color, setColor] = useState("#000000");
-  const [bgColor, setBgColor] = useState("#FFFFFF");
-  const [size, setSize] = useState("200");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [qrValue, setQrValue] = useState("");
-  const [hasGenerated, setHasGenerated] = useState(false);
-  const [activeTab, setActiveTab] = useState("text");
-  const [savedQRCodes, setSavedQRCodes] = useState<Array<{
-    id: string;
-    value: string;
-    name: string;
-    color: string;
-    bgColor: string;
-    size: string;
-  }>>([]);
-  const [contentWarning, setContentWarning] = useState<string | null>(null);
-  const qrRef = useRef<HTMLDivElement>(null);
+export const QRCodeGenerator = () => {
   const { toast } = useToast();
+  const [qrValue, setQrValue] = useState("https://example.com");
+  const [qrSize, setQrSize] = useState(200);
+  const [qrType, setQrType] = useState<"url" | "text" | "email" | "wifi" | "phone">("url");
+  const [qrColor, setQrColor] = useState("#000000");
+  const [qrLabel, setQrLabel] = useState("");
+  const [history, setHistory] = useState<QRCodeData[]>(() => {
+    const savedHistory = localStorage.getItem("qrcodeHistory");
+    return savedHistory ? JSON.parse(savedHistory) : [];
+  });
 
-  const checkContentLength = (text: string) => {
-    if (text.length > MAX_QR_CONTENT_LENGTH) {
-      setContentWarning(`Le contenu dépasse la limite de ${MAX_QR_CONTENT_LENGTH} caractères. Il sera tronqué lors de la génération.`);
-      return text.substring(0, MAX_QR_CONTENT_LENGTH);
+  // Fonction pour manipuler le contenu basé sur le type de QR
+  const handleContentChange = (value: string) => {
+    setQrValue(value);
+  };
+
+  // Fonction pour formatter le contenu basé sur le type
+  const getFormattedContent = () => {
+    switch (qrType) {
+      case "url":
+        // Assurez-vous que l'URL commence par http:// ou https://
+        if (qrValue && !qrValue.startsWith('http://') && !qrValue.startsWith('https://')) {
+          return `https://${qrValue}`;
+        }
+        return qrValue;
+      case "email":
+        return `mailto:${qrValue}`;
+      case "phone":
+        return `tel:${qrValue}`;
+      case "wifi":
+        // Format: WIFI:S:SSID;T:WPA;P:password;;
+        try {
+          const wifiData = JSON.parse(qrValue);
+          return `WIFI:S:${wifiData.ssid};T:${wifiData.security || 'WPA'};P:${wifiData.password};;`;
+        } catch (e) {
+          // Si le format n'est pas JSON valide, utiliser comme texte brut
+          toast({
+            title: "Format WiFi non valide",
+            description: "Utilisez le format JSON: {\"ssid\":\"nom_reseau\",\"password\":\"mot_de_passe\",\"security\":\"WPA\"}",
+            variant: "destructive",
+          });
+          return qrValue;
+        }
+      default:
+        return qrValue;
     }
-    setContentWarning(null);
-    return text;
   };
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    setContent(newContent);
-    checkContentLength(newContent);
+  // Fonction pour obtenir un placeholder approprié selon le type
+  const getPlaceholder = () => {
+    switch (qrType) {
+      case "url":
+        return "https://example.com";
+      case "email":
+        return "nom@example.com";
+      case "phone":
+        return "+33612345678";
+      case "wifi":
+        return "{\"ssid\":\"nom_reseau\",\"password\":\"mot_de_passe\",\"security\":\"WPA\"}";
+      default:
+        return "Texte à encoder";
+    }
   };
 
-  const handleGenerate = () => {
-    const contentToUse = activeTab === "text" ? content : url;
-    
-    if (!contentToUse.trim()) {
+  // Fonction pour obtenir un label approprié selon le type
+  const getInputLabel = () => {
+    switch (qrType) {
+      case "url":
+        return "URL";
+      case "email":
+        return "Adresse email";
+      case "phone":
+        return "Numéro de téléphone";
+      case "wifi":
+        return "Configuration WiFi (format JSON)";
+      default:
+        return "Texte";
+    }
+  };
+
+  // Fonction pour générer le QR code
+  const handleGenerateQR = () => {
+    const formattedContent = getFormattedContent();
+    if (!formattedContent) {
       toast({
-        title: activeTab === "text" ? "Contenu requis" : "URL requise",
-        description: activeTab === "text" 
-          ? "Veuillez saisir du contenu pour votre QR code." 
-          : "Veuillez saisir une URL pour votre QR code.",
+        title: "Contenu manquant",
+        description: "Veuillez entrer un contenu pour le QR code",
         variant: "destructive",
       });
       return;
     }
 
-    // For URLs, validate format
-    let finalContent = contentToUse;
-    if (activeTab === "url" && !url.startsWith("http")) {
-      finalContent = `https://${url}`;
-      setUrl(finalContent);
-    }
-
-    // Trim content if it's too long
-    if (finalContent.length > MAX_QR_CONTENT_LENGTH) {
-      finalContent = finalContent.substring(0, MAX_QR_CONTENT_LENGTH);
-      toast({
-        title: "Contenu tronqué",
-        description: `Le contenu a été limité à ${MAX_QR_CONTENT_LENGTH} caractères pour permettre la génération du QR code.`,
-        variant: "warning",
-      });
-    }
-
-    setIsGenerating(true);
-    
-    // Simulate generation process
-    setTimeout(() => {
-      setQrValue(finalContent);
-      setHasGenerated(true);
-      setIsGenerating(false);
+    // Capturer l'image du QR code
+    const svg = document.querySelector("#qrcode svg");
+    const svgData = svg ? new XMLSerializer().serializeToString(svg) : "";
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = qrSize;
+      canvas.height = qrSize;
+      ctx?.drawImage(img, 0, 0);
+      const pngImage = canvas.toDataURL("image/png");
+      
+      // Créer un nouvel élément d'historique
+      const newQRCode: QRCodeData = {
+        id: `qr-${Date.now()}`,
+        content: formattedContent,
+        size: qrSize,
+        type: qrType,
+        color: qrColor,
+        label: qrLabel || `QR Code ${history.length + 1}`,
+        createdAt: new Date(),
+        img: pngImage
+      };
+      
+      // Mettre à jour l'historique
+      const newHistory = [newQRCode, ...history];
+      setHistory(newHistory);
+      localStorage.setItem("qrcodeHistory", JSON.stringify(newHistory));
       
       toast({
         title: "QR Code généré",
-        description: "Votre QR code a été créé avec succès.",
+        description: "Le QR code a été créé et ajouté à l'historique"
       });
-    }, 800);
+    };
+    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
   };
 
-  // Function to download QR code as PNG
-  const handleDownload = () => {
-    if (!qrRef.current) return;
-    
-    // Create a canvas element
-    const canvas = document.createElement("canvas");
-    const svg = qrRef.current.querySelector("svg");
-    
+  // Fonction pour télécharger le QR code
+  const handleDownloadQR = () => {
+    const svg = document.querySelector("#qrcode svg");
     if (!svg) {
       toast({
         title: "Erreur",
-        description: "Impossible de télécharger le QR code.",
+        description: "Impossible de générer le QR code pour le téléchargement",
         variant: "destructive",
       });
       return;
     }
 
     const svgData = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    
-    // Add padding around the QR code
-    const padding = 20;
-    const svgSize = parseInt(size);
-    canvas.width = svgSize + (padding * 2);
-    canvas.height = svgSize + (padding * 2);
-    
+    const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    // Fill background
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+    const img = new Image();
     img.onload = () => {
-      // Draw the QR code in the center of the canvas
-      ctx.drawImage(img, padding, padding, svgSize, svgSize);
+      canvas.width = qrSize;
+      canvas.height = qrSize;
+      ctx?.drawImage(img, 0, 0);
+      const pngImage = canvas.toDataURL("image/png");
       
-      // Create a link to download
-      const link = document.createElement("a");
-      link.download = `qr-code-${new Date().getTime()}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngImage;
+      downloadLink.download = `qrcode-${Date.now()}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
       
       toast({
-        title: "Téléchargement réussi",
-        description: "Votre QR code a été téléchargé.",
+        title: "QR Code téléchargé",
+        description: "Le QR code a été téléchargé avec succès"
       });
     };
-    
-    img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`;
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: "QR Code partagé",
-        text: "Voici mon QR code généré avec Zen Commerce",
-        url: window.location.href
-      }).then(() => {
-        toast({
-          title: "Partagé avec succès",
-          description: "Votre QR code a été partagé.",
-        });
-      }).catch(() => {
-        toast({
-          title: "Erreur de partage",
-          description: "Une erreur est survenue lors du partage.",
-          variant: "destructive",
-        });
-      });
-    } else {
-      toast({
-        title: "Fonctionnalité indisponible",
-        description: "Le partage n'est pas pris en charge par votre navigateur.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSave = () => {
-    if (!qrValue) return;
-    
-    const newQrCode = {
-      id: `qr-${Date.now()}`,
-      value: qrValue,
-      name: activeTab === "text" ? 
-        (qrValue.length > 15 ? `${qrValue.substring(0, 15)}...` : qrValue) : 
-        (new URL(qrValue).hostname),
-      color,
-      bgColor,
-      size,
-    };
-    
-    // Save to localStorage
-    const savedCodes = localStorage.getItem('savedQRCodes');
-    let updatedCodes = [];
-    
-    if (savedCodes) {
-      try {
-        const parsedCodes = JSON.parse(savedCodes);
-        updatedCodes = [newQrCode, ...parsedCodes];
-      } catch (error) {
-        updatedCodes = [newQrCode];
-      }
-    } else {
-      updatedCodes = [newQrCode];
-    }
-    
-    localStorage.setItem('savedQRCodes', JSON.stringify(updatedCodes));
-    setSavedQRCodes(updatedCodes);
-    
-    toast({
-      title: "QR Code sauvegardé",
-      description: "Votre QR code a été sauvegardé avec succès.",
-    });
-  };
-
-  const loadSavedQRCode = (savedQR: any) => {
-    setQrValue(savedQR.value);
-    setColor(savedQR.color);
-    setBgColor(savedQR.bgColor);
-    setSize(savedQR.size);
-    setHasGenerated(true);
+    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
   };
 
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader>
-        <CardTitle>Générer un QR Code</CardTitle>
-        <CardDescription>
-          Personnalisez et créez votre QR code facilement
-        </CardDescription>
+        <CardTitle className="text-2xl">Générateur de QR Code</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-          <TabsList>
-            <TabsTrigger value="text">Texte</TabsTrigger>
-            <TabsTrigger value="url">URL</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="text" className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="qr-content">Contenu</Label>
-              <Textarea
-                id="qr-content"
-                placeholder="Entrez le texte à encoder (maximum 800 caractères)"
-                className="resize-none min-h-[150px]"
-                value={content}
-                onChange={handleContentChange}
-              />
-              {contentWarning && (
-                <Alert variant="warning" className="mt-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Attention</AlertTitle>
-                  <AlertDescription>
-                    {contentWarning}
-                  </AlertDescription>
-                </Alert>
-              )}
-              <div className="text-xs text-muted-foreground text-right mt-1">
-                {content.length} / {MAX_QR_CONTENT_LENGTH} caractères
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="url" className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="qr-url">URL</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Link className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="qr-url"
-                    placeholder="https://example.com"
-                    className="pl-9"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+      <CardContent className="grid gap-6">
+        <div className="grid gap-2">
+          <Label htmlFor="qrType">Type de contenu</Label>
+          <Select
+            value={qrType}
+            onValueChange={(value: "url" | "text" | "email" | "wifi" | "phone") => {
+              setQrType(value);
+              setQrValue(""); // Reset value when changing type
+            }}
+          >
+            <SelectTrigger id="qrType">
+              <SelectValue placeholder="Type de contenu" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="url">URL</SelectItem>
+              <SelectItem value="text">Texte</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="phone">Numéro de téléphone</SelectItem>
+              <SelectItem value="wifi">Configuration WiFi</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label htmlFor="qr-color">Couleur</Label>
-            <div className="flex gap-2">
+        <div className="grid gap-2">
+          <Label htmlFor="qrContent">{getInputLabel()}</Label>
+          <Input
+            id="qrContent"
+            value={qrValue}
+            onChange={(e) => handleContentChange(e.target.value)}
+            placeholder={getPlaceholder()}
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="qrLabel">Étiquette (optionnelle)</Label>
+          <Input
+            id="qrLabel"
+            value={qrLabel}
+            onChange={(e) => setQrLabel(e.target.value)}
+            placeholder="Description du QR code"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="qrSize">Taille (pixels)</Label>
+            <div className="flex gap-2 items-center">
               <Input
-                type="color"
-                id="qr-color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-12 h-10 p-1"
+                id="qrSize"
+                type="number"
+                min="100"
+                max="500"
+                value={qrSize}
+                onChange={(e) => setQrSize(parseInt(e.target.value, 10))}
               />
-              <Input
-                type="text"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="flex-1"
-              />
+              <span className="text-sm">{qrSize}px</span>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="qr-bg-color">Fond</Label>
-            <div className="flex gap-2">
-              <Input
+          <div className="grid gap-2">
+            <Label htmlFor="qrColor">Couleur</Label>
+            <div className="flex gap-2 items-center">
+              <input
+                id="qrColor"
                 type="color"
-                id="qr-bg-color"
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-                className="w-12 h-10 p-1"
+                value={qrColor}
+                onChange={(e) => setQrColor(e.target.value)}
+                className="h-10 w-12 p-0 border-0"
               />
-              <Input
-                type="text"
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-                className="flex-1"
+              <Input 
+                value={qrColor}
+                onChange={(e) => setQrColor(e.target.value)}
+                className="flex-grow"
               />
             </div>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="qr-size">Taille</Label>
-            <Select value={size} onValueChange={setSize}>
-              <SelectTrigger id="qr-size">
-                <SelectValue placeholder="Choisir une taille" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="100">100 px</SelectItem>
-                <SelectItem value="200">200 px</SelectItem>
-                <SelectItem value="300">300 px</SelectItem>
-                <SelectItem value="400">400 px</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
-        <div className="pt-4">
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isGenerating || (activeTab === "text" ? !content.trim() : !url.trim())}
-            className="w-full"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Génération en cours...
-              </>
-            ) : (
-              <>
-                <QrCode className="mr-2 h-4 w-4" />
-                Générer le QR Code
-              </>
-            )}
-          </Button>
+        <div id="qrcode" className="flex justify-center my-4">
+          <QRCode 
+            value={getFormattedContent() || " "}
+            size={qrSize} 
+            fgColor={qrColor}
+          />
         </div>
 
-        {hasGenerated && qrValue && (
-          <div 
-            ref={qrRef}
-            className="flex flex-col items-center justify-center bg-white rounded-md p-8 border shadow-sm"
-          >
-            <QRCode
-              value={qrValue}
-              size={parseInt(size)}
-              fgColor={color}
-              bgColor={bgColor}
-              level="H"
-            />
-            <p className="text-sm text-muted-foreground mt-4 text-center max-w-sm break-words">
-              {activeTab === "url" ? (
-                <a href={qrValue} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                  {qrValue}
-                </a>
-              ) : (
-                qrValue.length > 50 ? `${qrValue.substring(0, 50)}...` : qrValue
-              )}
-            </p>
-          </div>
-        )}
-      </CardContent>
-      {hasGenerated && qrValue && (
-        <CardFooter className="flex-wrap gap-2 justify-end">
-          <Button variant="outline" onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            Sauvegarder
+        <div className="flex gap-2">
+          <Button onClick={handleGenerateQR} className="flex-1">
+            Générer
           </Button>
-          <Button variant="outline" onClick={handleShare}>
-            <Share2 className="mr-2 h-4 w-4" />
-            Partager
-          </Button>
-          <Button onClick={handleDownload}>
-            <Download className="mr-2 h-4 w-4" />
+          <Button onClick={handleDownloadQR} variant="outline" className="flex-1">
             Télécharger
           </Button>
-        </CardFooter>
-      )}
+        </div>
+      </CardContent>
     </Card>
   );
-}
+};

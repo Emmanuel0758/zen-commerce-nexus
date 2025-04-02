@@ -7,8 +7,89 @@ import { CarriersConfigCard } from "@/components/CarriersConfigCard";
 import { ShippingZonesCard } from "@/components/ShippingZonesCard";
 import { Button } from "@/components/ui/button";
 import { Truck, Map, Settings, Download, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 export default function LogisticsPage() {
+  const { toast } = useToast();
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  // Fonction pour gérer l'export de données
+  const handleExport = (format: "json" | "pdf" | "excel") => {
+    if (format === "json") {
+      // Simuler l'export JSON
+      const demoData = {
+        deliveries: [
+          { id: "DEL-1055", status: "en_cours", destination: "Paris Centre" },
+          { id: "DEL-1052", status: "retard", destination: "Lyon Sud" },
+          { id: "DEL-1050", status: "prêt", destination: "Bordeaux Ouest" },
+        ],
+        carriers: [
+          { id: 1, name: "Livreur Express A", active: true },
+          { id: 2, name: "Livreur Rapide B", active: true },
+        ]
+      };
+      
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(demoData, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "logistique-data.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+      
+      toast({
+        title: "Export JSON réussi",
+        description: "Les données ont été exportées en format JSON"
+      });
+    } else if (format === "pdf") {
+      // Simulation d'export PDF
+      toast({
+        title: "Export PDF en cours",
+        description: "Préparation du fichier PDF..."
+      });
+      
+      setTimeout(() => {
+        toast({
+          title: "Export PDF terminé",
+          description: "Le fichier PDF a été téléchargé"
+        });
+      }, 1500);
+    } else if (format === "excel") {
+      // Simuler l'export Excel/CSV
+      let csvContent = "ID,Statut,Destination\n";
+      csvContent += "DEL-1055,En cours,Paris Centre\n";
+      csvContent += "DEL-1052,Retard,Lyon Sud\n";
+      csvContent += "DEL-1050,Prêt,Bordeaux Ouest\n";
+      
+      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "logistique-data.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast({
+        title: "Export Excel réussi",
+        description: "Les données ont été exportées en format CSV"
+      });
+    }
+  };
+
+  // Fonction pour gérer l'import de données
+  const handleImport = () => {
+    toast({
+      title: "Import réussi",
+      description: "Les données ont été importées avec succès"
+    });
+    setImportDialogOpen(false);
+  };
+
   return (
     <div className="flex">
       <SidebarNav />
@@ -18,15 +99,32 @@ export default function LogisticsPage() {
             <div className="flex justify-between items-center">
               <CardTitle className="text-2xl font-bold">Logistique</CardTitle>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Download className="h-4 w-4" />
+                      Exporter
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56">
+                    <div className="flex flex-col gap-1">
+                      <Button variant="ghost" className="justify-start" onClick={() => handleExport("excel")}>
+                        Format Excel (CSV)
+                      </Button>
+                      <Button variant="ghost" className="justify-start" onClick={() => handleExport("pdf")}>
+                        Format PDF
+                      </Button>
+                      <Button variant="ghost" className="justify-start" onClick={() => handleExport("json")}>
+                        Format JSON
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button variant="outline" className="flex items-center gap-2" onClick={() => setImportDialogOpen(true)}>
                   <Upload className="h-4 w-4" />
                   Importer
                 </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Exporter
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2" onClick={() => setSettingsDialogOpen(true)}>
                   <Settings className="h-4 w-4" />
                   Paramètres
                 </Button>
@@ -87,6 +185,101 @@ export default function LogisticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogue Paramètres */}
+      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Paramètres de Logistique</DialogTitle>
+            <DialogDescription>
+              Configurez les paramètres de votre système de logistique
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="grid gap-4">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Méthodes de livraison</h3>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="standard" defaultChecked />
+                  <label htmlFor="standard">Livraison standard</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="express" defaultChecked />
+                  <label htmlFor="express">Livraison express</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="sameday" />
+                  <label htmlFor="sameday">Livraison le jour même</label>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium mb-2">Notifications</h3>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="customer_notif" defaultChecked />
+                  <label htmlFor="customer_notif">Notifier les clients des mises à jour</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="admin_notif" defaultChecked />
+                  <label htmlFor="admin_notif">Notifier les administrateurs des problèmes</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettingsDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={() => {
+              toast({
+                title: "Paramètres mis à jour",
+                description: "Les paramètres de logistique ont été mis à jour"
+              });
+              setSettingsDialogOpen(false);
+            }}>
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialogue Importer */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importer des données</DialogTitle>
+            <DialogDescription>
+              Importez des données de livraisons depuis un fichier
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="grid gap-4">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-md p-6 text-center">
+                <div className="flex flex-col items-center">
+                  <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Glissez-déposez un fichier ici ou cliquez pour parcourir
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Formats supportés: CSV, JSON, XLS
+                  </p>
+                  <Button variant="outline" className="mt-4">
+                    Parcourir les fichiers
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleImport}>
+              Importer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

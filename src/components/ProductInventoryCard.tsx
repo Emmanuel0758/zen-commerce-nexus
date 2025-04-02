@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { FileText, FileSpreadsheet, FilePdf } from "lucide-react";
+import { FileText, FileSpreadsheet, FileDown } from "lucide-react";
 import { exportData } from "@/utils/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useAppSettings } from "@/hooks/use-app-settings";
@@ -62,19 +62,15 @@ export function ProductInventoryCard() {
   const { settings } = useAppSettings();
   
   const filteredProducts = demoProducts.filter(product => {
-    // Appliquer recherche par texte
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.id.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Appliquer filtre par statut
     const matchesStatus = statusFilter === "all" || product.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  // Préparer les données d'exportation en fonction de la langue
   const getExportData = () => {
-    // Traduire les statuts en fonction de la langue
     const localizedProducts = filteredProducts.map(product => {
       const statusTranslation = settings.language === 'fr'
         ? product.status === "instock" ? "En stock" : product.status === "lowstock" ? "Stock faible" : "Rupture de stock"
@@ -144,7 +140,7 @@ export function ProductInventoryCard() {
                 Format Excel (CSV)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExportRequest("pdf")}>
-                <FilePdf className="mr-2 h-4 w-4" />
+                <FileDown className="mr-2 h-4 w-4" />
                 Format PDF
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExportRequest("json")}>

@@ -29,7 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { FileText, FileSpreadsheet, FilePdf } from "lucide-react";
+import { FileText, FileSpreadsheet, FileDown } from "lucide-react";
 import { exportData } from "@/utils/exportUtils";
 
 type Product = {
@@ -296,7 +296,7 @@ export default function ProductsPage() {
                   Format Excel (CSV)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExportProducts("pdf")}>
-                  <FilePdf className="mr-2 h-4 w-4" />
+                  <FileDown className="mr-2 h-4 w-4" />
                   Format PDF
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExportProducts("json")}>

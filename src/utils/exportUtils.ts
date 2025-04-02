@@ -1,5 +1,7 @@
 
 import { useToast } from "@/hooks/use-toast";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
 
 type ExportFormat = "json" | "pdf" | "excel";
 
@@ -18,7 +20,7 @@ export const exportData = async (data: ExportableData, format: ExportFormat, fil
       case "excel":
         return exportExcel(data, fileName);
       case "pdf":
-        return await exportPDF(data, fileName);
+        return exportPDF(data, fileName);
       default:
         console.error("Format d'exportation non pris en charge");
         return false;
@@ -77,13 +79,12 @@ const exportExcel = (data: ExportableData, fileName: string): boolean => {
         });
       }
     } else if (typeof data === 'object') {
-      // Pour un objet avec des propriétés imbriquées
+      // Pour un objet avec des tableaux imbriqués
       for (const [key, value] of Object.entries(data)) {
         if (Array.isArray(value)) {
-          // Exportons ce tableau en tant que sous-section
-          csvContent += `${key}\n`;
-          
+          // Si la propriété est un tableau d'objets
           if (value.length > 0 && typeof value[0] === 'object') {
+            // En-têtes
             const headers = Object.keys(value[0]);
             csvContent += headers.join(',') + '\n';
             
@@ -98,18 +99,19 @@ const exportExcel = (data: ExportableData, fileName: string): boolean => {
               csvContent += row.join(',') + '\n';
             });
           }
-          csvContent += '\n';
         }
       }
     }
     
-    const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `${fileName}.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();
+    URL.revokeObjectURL(url);
     return true;
   } catch (error) {
     console.error("Erreur d'exportation Excel:", error);
@@ -118,36 +120,69 @@ const exportExcel = (data: ExportableData, fileName: string): boolean => {
 };
 
 /**
- * Export au format PDF (simulation)
- * Note: Dans une application réelle, vous utiliseriez une bibliothèque comme jsPDF
+ * Export au format PDF
  */
-const exportPDF = async (data: ExportableData, fileName: string): Promise<boolean> => {
+const exportPDF = (data: ExportableData, fileName: string): boolean => {
   try {
-    // Simulation de la génération d'un PDF avec un délai
-    return new Promise<boolean>((resolve) => {
-      // Créer un élément HTML pour visualiser les données
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.innerHTML = `<h1>${fileName}</h1><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    // Définir le document PDF
+    const doc = new jsPDF();
+    
+    // Ajouter un titre
+    doc.setFontSize(16);
+    doc.text(fileName, 14, 22);
+    doc.setFontSize(12);
+    doc.text(`Exporté le ${new Date().toLocaleDateString()}`, 14, 30);
+    
+    // Traiter différents types de données
+    if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
+      // Créer un tableau pour jspdf-autotable
+      const headers = Object.keys(data[0]);
+      const rows = data.map(item => headers.map(key => item[key]?.toString() || ''));
       
-      document.body.appendChild(container);
+      // @ts-ignore - jspdf-autotable types
+      doc.autoTable({
+        head: [headers],
+        body: rows,
+        startY: 40,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+      });
+    } else if (typeof data === 'object') {
+      // Pour les objets avec propriétés imbriquées
+      let yPos = 40;
       
-      // Simuler un traitement
-      setTimeout(() => {
-        // En production, utilisez jsPDF ou une autre bibliothèque pour générer un vrai PDF
-        const dataStr = "data:application/pdf;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-        const downloadLink = document.createElement('a');
-        downloadLink.setAttribute("href", dataStr);
-        downloadLink.setAttribute("download", `${fileName}.pdf`);
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        downloadLink.remove();
-        container.remove();
-        
-        resolve(true);
-      }, 1000);
-    });
+      for (const [key, value] of Object.entries(data)) {
+        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+          // Ajouter un sous-titre pour la section
+          doc.setFontSize(12);
+          doc.text(key, 14, yPos);
+          yPos += 8;
+          
+          // Obtenir les en-têtes à partir du premier objet
+          const headers = Object.keys(value[0]);
+          const rows = value.map(item => headers.map(k => item[k]?.toString() || ''));
+          
+          // @ts-ignore - jspdf-autotable types
+          doc.autoTable({
+            head: [headers],
+            body: rows,
+            startY: yPos,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+          });
+          
+          // Mettre à jour la position Y pour le prochain tableau
+          // @ts-ignore - lastAutoTable exists on the doc object added by autotable
+          yPos = doc.lastAutoTable.finalY + 15;
+        }
+      }
+    }
+    
+    // Enregistrer le PDF
+    doc.save(`${fileName}.pdf`);
+    return true;
   } catch (error) {
     console.error("Erreur d'exportation PDF:", error);
     return false;
@@ -186,3 +221,13 @@ export const useDataExport = () => {
   
   return { handleExport };
 };
+
+/**
+ * Types pour jsPDF-autotable
+ */
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => any;
+    lastAutoTable: { finalY: number };
+  }
+}

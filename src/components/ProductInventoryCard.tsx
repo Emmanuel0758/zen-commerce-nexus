@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { useDataExport } from "@/utils/exportUtils";
+import { FileText, FileSpreadsheet, FilePdf } from "lucide-react";
+import { exportData } from "@/utils/exportUtils";
+import { useToast } from "@/hooks/use-toast";
 import { useAppSettings } from "@/hooks/use-app-settings";
 
 type Product = {
@@ -57,7 +58,7 @@ export function ProductInventoryCard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
-  const { handleExport } = useDataExport();
+  const { toast } = useToast();
   const { settings } = useAppSettings();
   
   const filteredProducts = demoProducts.filter(product => {
@@ -86,16 +87,43 @@ export function ProductInventoryCard() {
     });
     
     return {
-      products: localizedProducts,
-      exportDate: new Date().toISOString(),
-      totalItems: localizedProducts.length,
+      metadata: {
+        title: settings.language === 'fr' ? "Inventaire produits" : "Product inventory",
+        exportDate: new Date().toISOString(),
+        totalItems: localizedProducts.length,
+        appName: settings.appName
+      },
+      products: localizedProducts
     };
   };
 
   const exportFileName = settings.language === 'fr' ? 'inventaire-produits' : 'product-inventory';
 
   const handleExportRequest = async (format: "json" | "pdf" | "excel") => {
-    await handleExport(getExportData(), format, exportFileName);
+    try {
+      toast({
+        title: `Exportation ${format.toUpperCase()} en cours`,
+        description: "Préparation du fichier..."
+      });
+      
+      const success = await exportData(getExportData(), format, exportFileName);
+      
+      if (success) {
+        toast({
+          title: "Exportation réussie",
+          description: `L'inventaire des produits a été exporté en format ${format.toUpperCase()}`
+        });
+      } else {
+        throw new Error("Échec de l'exportation");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'exportation:", error);
+      toast({
+        title: "Erreur d'exportation",
+        description: "Une erreur est survenue lors de l'exportation",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -106,17 +134,21 @@ export function ProductInventoryCard() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
                 Exporter
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleExportRequest("excel")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Format Excel (CSV)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExportRequest("pdf")}>
+                <FilePdf className="mr-2 h-4 w-4" />
                 Format PDF
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExportRequest("json")}>
+                <FileText className="mr-2 h-4 w-4" />
                 Format JSON
               </DropdownMenuItem>
             </DropdownMenuContent>

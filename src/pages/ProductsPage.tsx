@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -30,6 +29,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { FileText, FileSpreadsheet, FilePdf } from "lucide-react";
+import { exportData } from "@/utils/exportUtils";
 
 type Product = {
   id: string;
@@ -110,18 +111,14 @@ export default function ProductsPage() {
   
   const { toast } = useToast();
 
-  // Filtrer et trier les produits
   const filteredProducts = products.filter(product => {
-    // Appliquer recherche par texte
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       product.sku.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Appliquer filtre par statut
     const matchesStatus = statusFilter === "all" || product.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-    // Appliquer le tri par prix
     if (priceSort === "asc") {
       return parseFloat(a.price.replace(/[^\d]/g, '')) - parseFloat(b.price.replace(/[^\d]/g, ''));
     } else if (priceSort === "desc") {
@@ -130,12 +127,10 @@ export default function ProductsPage() {
     return 0;
   });
 
-  // Stats calculées
   const inStockCount = products.filter(p => p.status === "instock").length;
   const lowStockCount = products.filter(p => p.status === "lowstock").length;
   const outOfStockCount = products.filter(p => p.status === "outofstock").length;
 
-  // Fonctions pour gérer les produits
   const handleAddProduct = () => {
     if (!newProduct.name || !newProduct.sku || !newProduct.price) {
       toast({
@@ -183,7 +178,6 @@ export default function ProductsPage() {
   const handleEditProduct = () => {
     if (!currentProduct) return;
     
-    // S'assurer que le prix inclut "FCFA"
     if (currentProduct.price && !currentProduct.price.includes('FCFA')) {
       currentProduct.price = `${currentProduct.price} FCFA`;
     }
@@ -224,61 +218,47 @@ export default function ProductsPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  // Fonction améliorée pour exporter les produits
-  const handleExportProducts = (format: "json" | "pdf" | "excel") => {
-    if (format === "json") {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "zen-products.json");
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-    } 
-    else if (format === "pdf") {
-      // Simulation d'export PDF
-      // En production, utiliser une bibliothèque comme jspdf
-      setTimeout(() => {
-        toast({
-          title: "Export PDF en cours",
-          description: "Préparation du fichier PDF..."
-        });
-        
-        setTimeout(() => {
-          toast({
-            title: "Export PDF terminé",
-            description: "Le fichier PDF a été téléchargé"
-          });
-        }, 1500);
-      }, 500);
-    } 
-    else if (format === "excel") {
-      // Simulation d'export Excel
-      // En production, utiliser une bibliothèque comme xlsx
-      
-      // Créer un CSV basique comme démonstration
-      let csvContent = "Référence,Produit,Prix,Stock,Statut\n";
-      
-      products.forEach(product => {
-        const status = product.status === "instock" ? "En stock" : 
-                      product.status === "lowstock" ? "Stock faible" : "Rupture de stock";
-                      
-        csvContent += `${product.sku},${product.name},${product.price},${product.stock},${status}\n`;
+  const handleExportProducts = async (format: "json" | "pdf" | "excel") => {
+    try {
+      toast({
+        title: `Exportation ${format.toUpperCase()} en cours`,
+        description: "Préparation du fichier..."
       });
       
-      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "zen-products.csv");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const dataToExport = {
+        metadata: {
+          title: "Catalogue des produits Zen",
+          exportDate: new Date().toISOString(),
+          totalProducts: products.length,
+          inStock: inStockCount,
+          lowStock: lowStockCount,
+          outOfStock: outOfStockCount
+        },
+        products: products.map(product => ({
+          ...product,
+          statusText: product.status === "instock" ? "En stock" : 
+                      product.status === "lowstock" ? "Stock faible" : "Rupture de stock"
+        }))
+      };
+      
+      const success = await exportData(dataToExport, format, "zen-products");
+      
+      if (success) {
+        toast({
+          title: "Exportation réussie",
+          description: `Le catalogue des produits a été exporté en format ${format.toUpperCase()}`
+        });
+      } else {
+        throw new Error("Échec de l'exportation");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'exportation:", error);
+      toast({
+        title: "Erreur d'exportation",
+        description: "Une erreur est survenue lors de l'exportation du catalogue",
+        variant: "destructive"
+      });
     }
-    
-    toast({
-      title: "Export réussi",
-      description: `La liste des produits a été exportée en format ${format.toUpperCase()}`
-    });
   };
 
   const resetFilters = () => {
@@ -306,33 +286,21 @@ export default function ProductsPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mr-2"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
+                  <FileText className="mr-2 h-4 w-4" />
                   Exporter
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleExportProducts("excel")}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
                   Format Excel (CSV)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExportProducts("pdf")}>
+                  <FilePdf className="mr-2 h-4 w-4" />
                   Format PDF
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExportProducts("json")}>
+                  <FileText className="mr-2 h-4 w-4" />
                   Format JSON
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -479,7 +447,6 @@ export default function ProductsPage() {
         </Card>
       </div>
 
-      {/* Ajouter Produit Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -535,7 +502,6 @@ export default function ProductsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Éditer Produit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -618,7 +584,6 @@ export default function ProductsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Supprimer Produit Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

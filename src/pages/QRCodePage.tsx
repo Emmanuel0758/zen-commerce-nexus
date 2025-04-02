@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Layout } from "@/components/Layout";
-import QRCodeGenerator from "@/components/QRCodeGenerator";
-import QRCodeHistory from "@/components/QRCodeHistory";
+import { QRCodeGenerator } from "@/components/QRCodeGenerator";
+import { QRCodeHistory } from "@/components/QRCodeHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function QRCodePage() {
@@ -43,9 +43,7 @@ export default function QRCodePage() {
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    <QRCodeGenerator 
-                      // The component doesn't accept initialContent prop, so we're removing it
-                    />
+                    <QRCodeGenerator />
                   </div>
                 </div>
               </CardContent>

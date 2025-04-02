@@ -162,19 +162,94 @@ export default function OrdersPage() {
       downloadAnchorNode.remove();
     } 
     else if (format === "pdf") {
-      setTimeout(() => {
-        toast({
-          title: "Export PDF en cours",
-          description: "Préparation du fichier PDF..."
-        });
+      const doc = new jsPDF();
+      
+      if (settings.logo) {
+        try {
+          doc.addImage(settings.logo, 'JPEG', 15, 10, 30, 30);
+        } catch (error) {
+          console.error("Erreur lors du chargement du logo:", error);
+          doc.setFontSize(22);
+          doc.setTextColor(128, 0, 128);
+          doc.text(settings.appName.substring(0, 1), 25, 25);
+        }
+      }
+      
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(settings.appName.toUpperCase(), settings.logo ? 50 : 15, 25);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('123 Avenue du Commerce', settings.logo ? 50 : 15, 32);
+      doc.text('75001 Paris, France', settings.logo ? 50 : 15, 37);
+      doc.text('contact@zenbeverages.com', settings.logo ? 50 : 15, 42);
+      
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('LISTE DES COMMANDES', 105, 55, { align: 'center' });
+      
+      doc.setFontSize(11);
+      doc.text(`Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`, 105, 62, { align: 'center' });
+      
+      const headers = [["Commande", "Client", "Date", "Articles", "Total", "Statut"]];
+      
+      const data = orders.map(order => {
+        const status = 
+          order.status === "completed" ? "Terminée" : 
+          order.status === "processing" ? "En traitement" : 
+          order.status === "pending" ? "En attente" : 
+          order.status === "cancelled" ? "Annulée" : "En attente de validation";
         
-        setTimeout(() => {
-          toast({
-            title: "Export PDF terminé",
-            description: "Le fichier PDF a été téléchargé"
-          });
-        }, 1500);
-      }, 500);
+        return [
+          order.id,
+          order.customer,
+          order.date,
+          order.items.toString(),
+          order.total,
+          status
+        ];
+      });
+      
+      doc.autoTable({
+        startY: 70,
+        head: headers,
+        body: data,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 15, halign: 'center' },
+          4: { cellWidth: 35, halign: 'right' },
+          5: { cellWidth: 30 }
+        }
+      });
+      
+      const finalY = doc.lastAutoTable.finalY;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total commandes: ${orders.length}`, 15, finalY + 15);
+      doc.text(`En attente: ${pendingCount}`, 15, finalY + 22);
+      doc.text(`En traitement: ${processingCount}`, 15, finalY + 29);
+      doc.text(`Terminées: ${completedCount}`, 15, finalY + 36);
+      doc.text(`Annulées/En attente: ${cancelledCount + onHoldCount}`, 15, finalY + 43);
+      
+      const pageCount = doc.internal.getNumberOfPages();
+      for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${settings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+      }
+      
+      doc.save(`liste-commandes.pdf`);
     } 
     else if (format === "excel") {
       let csvContent = "ID,Client,Date,Articles,Total,Statut\n";
@@ -256,7 +331,7 @@ export default function OrdersPage() {
     doc.line(15, 105, 195, 105);
     doc.text('Description', 17, 112);
     doc.text('Qté', 100, 112);
-    doc.text('Prix', 140, 112);
+    doc.text('Prix unitaire', 140, 112);
     doc.text('Total', 190, 112);
     doc.line(15, 115, 195, 115);
     

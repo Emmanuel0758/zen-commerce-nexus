@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FileText, FileSpreadsheet, FileDown } from "lucide-react";
 import { exportData } from "@/utils/exportUtils";
+import { useAppSettings } from "@/hooks/use-app-settings";
 
 type Product = {
   id: string;
@@ -110,6 +111,7 @@ export default function ProductsPage() {
   });
   
   const { toast } = useToast();
+  const { settings } = useAppSettings();
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -224,6 +226,99 @@ export default function ProductsPage() {
         title: `Exportation ${format.toUpperCase()} en cours`,
         description: "Préparation du fichier..."
       });
+      
+      if (format === "pdf") {
+        const doc = new jsPDF();
+        
+        if (settings.logo) {
+          try {
+            doc.addImage(settings.logo, 'JPEG', 15, 10, 30, 30);
+          } catch (error) {
+            console.error("Erreur lors du chargement du logo:", error);
+            doc.setFontSize(22);
+            doc.setTextColor(128, 0, 128);
+            doc.text(settings.appName.substring(0, 1), 25, 25);
+          }
+        }
+        
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text(settings.appName.toUpperCase(), settings.logo ? 50 : 15, 25);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('123 Avenue du Commerce', settings.logo ? 50 : 15, 32);
+        doc.text('75001 Paris, France', settings.logo ? 50 : 15, 37);
+        doc.text('contact@zenbeverages.com', settings.logo ? 50 : 15, 42);
+        
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CATALOGUE PRODUITS', 105, 55, { align: 'center' });
+        
+        doc.setFontSize(11);
+        doc.text(`Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`, 105, 62, { align: 'center' });
+        
+        const headers = [["Nom", "Référence", "Prix", "Stock", "Statut"]];
+        
+        const data = products.map(product => {
+          const status = 
+            product.status === "instock" ? "En stock" : 
+            product.status === "lowstock" ? "Stock faible" : 
+            "Rupture de stock";
+          
+          return [
+            product.name,
+            product.sku,
+            product.price,
+            product.stock.toString(),
+            status
+          ];
+        });
+        
+        doc.autoTable({
+          startY: 70,
+          head: headers,
+          body: data,
+          theme: 'grid',
+          headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+          styles: { 
+            fontSize: 9,
+            cellPadding: 3,
+          },
+          columnStyles: {
+            0: { cellWidth: 60 },
+            1: { cellWidth: 30 },
+            2: { cellWidth: 30, halign: 'right' },
+            3: { cellWidth: 20, halign: 'right' },
+            4: { cellWidth: 30 }
+          }
+        });
+        
+        const finalY = doc.lastAutoTable.finalY;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total produits: ${products.length}`, 15, finalY + 15);
+        doc.text(`En stock: ${inStockCount}`, 15, finalY + 22);
+        doc.text(`Stock faible: ${lowStockCount}`, 15, finalY + 29);
+        doc.text(`Rupture de stock: ${outOfStockCount}`, 15, finalY + 36);
+        
+        const pageCount = doc.internal.getNumberOfPages();
+        for(let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${settings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+        }
+        
+        doc.save(`catalogue-produits.pdf`);
+        
+        toast({
+          title: "Exportation réussie",
+          description: `Le catalogue des produits a été exporté en format PDF`
+        });
+        return;
+      }
       
       const dataToExport = {
         metadata: {
@@ -357,7 +452,7 @@ export default function ProductsPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-md font-medium">Liste des produits</CardTitle>
             <div className="flex items-center space-x-2">
-              <input
+              <Input
                 type="search"
                 placeholder="Rechercher un produit..."
                 className="rounded-md border border-input px-3 py-1 text-sm"

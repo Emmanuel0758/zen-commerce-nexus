@@ -18,7 +18,7 @@ export const exportData = async (data: ExportableData, format: ExportFormat, fil
       case "excel":
         return exportExcel(data, fileName);
       case "pdf":
-        return exportPDF(data, fileName);
+        return await exportPDF(data, fileName);
       default:
         console.error("Format d'exportation non pris en charge");
         return false;
@@ -121,7 +121,7 @@ const exportExcel = (data: ExportableData, fileName: string): boolean => {
  * Export au format PDF (simulation)
  * Note: Dans une application réelle, vous utiliseriez une bibliothèque comme jsPDF
  */
-const exportPDF = (data: ExportableData, fileName: string): boolean => {
+const exportPDF = async (data: ExportableData, fileName: string): Promise<boolean> => {
   try {
     // Simulation de la génération d'un PDF avec un délai
     return new Promise<boolean>((resolve) => {

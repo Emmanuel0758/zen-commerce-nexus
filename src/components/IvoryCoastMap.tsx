@@ -5,11 +5,11 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 // Points de livraison exemple en Côte d'Ivoire
 const deliveryPoints = [
-  { id: 'DEL-1055', name: 'Livraison Abidjan Centre', coordinates: [-4.0305, 5.3364], status: 'en_cours' },
-  { id: 'DEL-1052', name: 'Livraison Bouaké', coordinates: [-5.0338, 7.6881], status: 'retard' },
-  { id: 'DEL-1050', name: 'Livraison Yamoussoukro', coordinates: [-5.2767, 6.8275], status: 'prêt' },
-  { id: 'DEL-1048', name: 'Livraison San-Pédro', coordinates: [-6.6363, 4.7411], status: 'en_cours' },
-  { id: 'DEL-1045', name: 'Livraison Korhogo', coordinates: [-5.6279, 9.4580], status: 'en_cours' }
+  { id: 'DEL-1055', name: 'Livraison Abidjan Centre', coordinates: [-4.0305, 5.3364] as [number, number], status: 'en_cours' },
+  { id: 'DEL-1052', name: 'Livraison Bouaké', coordinates: [-5.0338, 7.6881] as [number, number], status: 'retard' },
+  { id: 'DEL-1050', name: 'Livraison Yamoussoukro', coordinates: [-5.2767, 6.8275] as [number, number], status: 'prêt' },
+  { id: 'DEL-1048', name: 'Livraison San-Pédro', coordinates: [-6.6363, 4.7411] as [number, number], status: 'en_cours' },
+  { id: 'DEL-1045', name: 'Livraison Korhogo', coordinates: [-5.6279, 9.4580] as [number, number], status: 'en_cours' }
 ];
 
 // Couleurs pour les différents statuts

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarNav } from "@/components/SidebarNav";
 import { DeliveryMapCard } from "@/components/DeliveryMapCard";
@@ -12,11 +11,13 @@ import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useDataExport } from "@/utils/exportUtils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LogisticsPage() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const { handleExport } = useDataExport();
+  const { toast } = useToast();
 
   // Données de démo pour l'exportation
   const demoLogisticsData = {
@@ -48,7 +49,7 @@ export default function LogisticsPage() {
   const handleImport = () => {
     // Simuler un import réussi
     setTimeout(() => {
-      handleExport.toast({
+      toast({
         title: "Import réussi",
         description: "Les données ont été importées avec succès"
       });
@@ -197,7 +198,7 @@ export default function LogisticsPage() {
               Annuler
             </Button>
             <Button onClick={() => {
-              handleExport.toast({
+              toast({
                 title: "Paramètres mis à jour",
                 description: "Les paramètres de logistique ont été mis à jour"
               });

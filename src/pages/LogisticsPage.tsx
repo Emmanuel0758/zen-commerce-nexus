@@ -7,87 +7,53 @@ import { CarriersConfigCard } from "@/components/CarriersConfigCard";
 import { ShippingZonesCard } from "@/components/ShippingZonesCard";
 import { Button } from "@/components/ui/button";
 import { Truck, Map, Settings, Download, Upload } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useDataExport } from "@/utils/exportUtils";
 
 export default function LogisticsPage() {
-  const { toast } = useToast();
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const { handleExport } = useDataExport();
+
+  // Données de démo pour l'exportation
+  const demoLogisticsData = {
+    deliveries: [
+      { id: "DEL-1055", status: "en_cours", destination: "Abidjan Centre", date: "2025-04-02" },
+      { id: "DEL-1052", status: "retard", destination: "Bouaké", date: "2025-04-01" },
+      { id: "DEL-1050", status: "prêt", destination: "Yamoussoukro", date: "2025-04-03" },
+      { id: "DEL-1048", status: "en_cours", destination: "San-Pédro", date: "2025-04-02" },
+      { id: "DEL-1045", status: "en_cours", destination: "Korhogo", date: "2025-04-01" },
+    ],
+    carriers: [
+      { id: 1, name: "Livreur Express Abidjan", active: true, zone: "Sud" },
+      { id: 2, name: "Transporteur National CI", active: true, zone: "National" },
+      { id: 3, name: "Livreur Yamoussoukro", active: false, zone: "Centre" },
+    ],
+    zones: [
+      { id: 1, name: "Abidjan et environs", deliveryTime: "24h", price: "1000 FCFA" },
+      { id: 2, name: "Villes principales", deliveryTime: "48h", price: "2500 FCFA" },
+      { id: 3, name: "Rural", deliveryTime: "72-96h", price: "5000 FCFA" },
+    ]
+  };
 
   // Fonction pour gérer l'export de données
-  const handleExport = (format: "json" | "pdf" | "excel") => {
-    if (format === "json") {
-      // Simuler l'export JSON
-      const demoData = {
-        deliveries: [
-          { id: "DEL-1055", status: "en_cours", destination: "Paris Centre" },
-          { id: "DEL-1052", status: "retard", destination: "Lyon Sud" },
-          { id: "DEL-1050", status: "prêt", destination: "Bordeaux Ouest" },
-        ],
-        carriers: [
-          { id: 1, name: "Livreur Express A", active: true },
-          { id: 2, name: "Livreur Rapide B", active: true },
-        ]
-      };
-      
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(demoData, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "logistique-data.json");
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-      
-      toast({
-        title: "Export JSON réussi",
-        description: "Les données ont été exportées en format JSON"
-      });
-    } else if (format === "pdf") {
-      // Simulation d'export PDF
-      toast({
-        title: "Export PDF en cours",
-        description: "Préparation du fichier PDF..."
-      });
-      
-      setTimeout(() => {
-        toast({
-          title: "Export PDF terminé",
-          description: "Le fichier PDF a été téléchargé"
-        });
-      }, 1500);
-    } else if (format === "excel") {
-      // Simuler l'export Excel/CSV
-      let csvContent = "ID,Statut,Destination\n";
-      csvContent += "DEL-1055,En cours,Paris Centre\n";
-      csvContent += "DEL-1052,Retard,Lyon Sud\n";
-      csvContent += "DEL-1050,Prêt,Bordeaux Ouest\n";
-      
-      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "logistique-data.csv");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      toast({
-        title: "Export Excel réussi",
-        description: "Les données ont été exportées en format CSV"
-      });
-    }
+  const handleExportRequest = async (format: "json" | "pdf" | "excel") => {
+    await handleExport(demoLogisticsData, format, "logistique-donnees");
   };
 
   // Fonction pour gérer l'import de données
   const handleImport = () => {
-    toast({
-      title: "Import réussi",
-      description: "Les données ont été importées avec succès"
-    });
-    setImportDialogOpen(false);
+    // Simuler un import réussi
+    setTimeout(() => {
+      handleExport.toast({
+        title: "Import réussi",
+        description: "Les données ont été importées avec succès"
+      });
+      setImportDialogOpen(false);
+    }, 1000);
   };
 
   return (
@@ -108,13 +74,13 @@ export default function LogisticsPage() {
                   </PopoverTrigger>
                   <PopoverContent className="w-56">
                     <div className="flex flex-col gap-1">
-                      <Button variant="ghost" className="justify-start" onClick={() => handleExport("excel")}>
+                      <Button variant="ghost" className="justify-start" onClick={() => handleExportRequest("excel")}>
                         Format Excel (CSV)
                       </Button>
-                      <Button variant="ghost" className="justify-start" onClick={() => handleExport("pdf")}>
+                      <Button variant="ghost" className="justify-start" onClick={() => handleExportRequest("pdf")}>
                         Format PDF
                       </Button>
-                      <Button variant="ghost" className="justify-start" onClick={() => handleExport("json")}>
+                      <Button variant="ghost" className="justify-start" onClick={() => handleExportRequest("json")}>
                         Format JSON
                       </Button>
                     </div>
@@ -133,7 +99,7 @@ export default function LogisticsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-6">
-              Gérez vos livraisons, transporteurs et suivez vos expéditions en temps réel.
+              Gérez vos livraisons, transporteurs et suivez vos expéditions en temps réel en Côte d'Ivoire.
             </p>
             
             <div className="flex flex-col gap-6">
@@ -231,7 +197,7 @@ export default function LogisticsPage() {
               Annuler
             </Button>
             <Button onClick={() => {
-              toast({
+              handleExport.toast({
                 title: "Paramètres mis à jour",
                 description: "Les paramètres de logistique ont été mis à jour"
               });

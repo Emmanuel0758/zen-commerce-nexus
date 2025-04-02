@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { useDataExport } from "@/utils/exportUtils";
+import { useAppSettings } from "@/hooks/use-app-settings";
 
 type Product = {
   id: string;
@@ -56,7 +57,8 @@ export function ProductInventoryCard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { handleExport } = useDataExport();
+  const { settings } = useAppSettings();
   
   const filteredProducts = demoProducts.filter(product => {
     // Appliquer recherche par texte
@@ -69,56 +71,31 @@ export function ProductInventoryCard() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleExport = (format: "json" | "pdf" | "excel") => {
-    if (format === "json") {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(demoProducts, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "zen-products-inventory.json");
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-    } 
-    else if (format === "pdf") {
-      // Simulation d'export PDF
-      setTimeout(() => {
-        toast({
-          title: "Export PDF en cours",
-          description: "Préparation du fichier PDF..."
-        });
-        
-        setTimeout(() => {
-          toast({
-            title: "Export PDF terminé",
-            description: "Le fichier PDF a été téléchargé"
-          });
-        }, 1500);
-      }, 500);
-    } 
-    else if (format === "excel") {
-      // Simulation d'export Excel - Création d'un CSV basique
-      let csvContent = "Référence,Produit,Prix,Stock,Statut\n";
+  // Préparer les données d'exportation en fonction de la langue
+  const getExportData = () => {
+    // Traduire les statuts en fonction de la langue
+    const localizedProducts = filteredProducts.map(product => {
+      const statusTranslation = settings.language === 'fr'
+        ? product.status === "instock" ? "En stock" : product.status === "lowstock" ? "Stock faible" : "Rupture de stock"
+        : product.status === "instock" ? "In stock" : product.status === "lowstock" ? "Low stock" : "Out of stock";
       
-      demoProducts.forEach(product => {
-        const status = product.status === "instock" ? "En stock" : 
-                      product.status === "lowstock" ? "Stock faible" : "Rupture de stock";
-                      
-        csvContent += `${product.id},${product.name},${product.price},${product.stock},${status}\n`;
-      });
-      
-      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "zen-products-inventory.csv");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    }
-    
-    toast({
-      title: "Export réussi",
-      description: `Les produits ont été exportés en format ${format.toUpperCase()}`
+      return {
+        ...product,
+        localizedStatus: statusTranslation
+      };
     });
+    
+    return {
+      products: localizedProducts,
+      exportDate: new Date().toISOString(),
+      totalItems: localizedProducts.length,
+    };
+  };
+
+  const exportFileName = settings.language === 'fr' ? 'inventaire-produits' : 'product-inventory';
+
+  const handleExportRequest = async (format: "json" | "pdf" | "excel") => {
+    await handleExport(getExportData(), format, exportFileName);
   };
 
   return (
@@ -133,13 +110,13 @@ export function ProductInventoryCard() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExport("excel")}>
+              <DropdownMenuItem onClick={() => handleExportRequest("excel")}>
                 Format Excel (CSV)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("pdf")}>
+              <DropdownMenuItem onClick={() => handleExportRequest("pdf")}>
                 Format PDF
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("json")}>
+              <DropdownMenuItem onClick={() => handleExportRequest("json")}>
                 Format JSON
               </DropdownMenuItem>
             </DropdownMenuContent>

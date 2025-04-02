@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { AppSettingsProvider } from "@/hooks/use-app-settings";
 
 import Index from "./pages/Index";
 import ProductsPage from "./pages/ProductsPage";
@@ -21,27 +22,29 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/qr-code" element={<QRCodePage />} />
-            <Route path="/produits" element={<ProductsPage />} />
-            <Route path="/commandes" element={<OrdersPage />} />
-            <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/logistique" element={<LogisticsPage />} />
-            <Route path="/marketing" element={<MarketingPage />} />
-            <Route path="/rapports" element={<ReportsPage />} />
-            <Route path="/parametres" element={<SettingsPage />} />
-            {/* Routes futures */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+    <AppSettingsProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/qr-code" element={<QRCodePage />} />
+              <Route path="/produits" element={<ProductsPage />} />
+              <Route path="/commandes" element={<OrdersPage />} />
+              <Route path="/clients" element={<ClientsPage />} />
+              <Route path="/logistique" element={<LogisticsPage />} />
+              <Route path="/marketing" element={<MarketingPage />} />
+              <Route path="/rapports" element={<ReportsPage />} />
+              <Route path="/parametres" element={<SettingsPage />} />
+              {/* Routes futures */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </AppSettingsProvider>
   </QueryClientProvider>
 );
 

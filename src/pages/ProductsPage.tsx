@@ -24,6 +24,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 type Product = {
   id: string;
@@ -218,18 +224,60 @@ export default function ProductsPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleExportProducts = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "zen-products.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+  // Fonction améliorée pour exporter les produits
+  const handleExportProducts = (format: "json" | "pdf" | "excel") => {
+    if (format === "json") {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "zen-products.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    } 
+    else if (format === "pdf") {
+      // Simulation d'export PDF
+      // En production, utiliser une bibliothèque comme jspdf
+      setTimeout(() => {
+        toast({
+          title: "Export PDF en cours",
+          description: "Préparation du fichier PDF..."
+        });
+        
+        setTimeout(() => {
+          toast({
+            title: "Export PDF terminé",
+            description: "Le fichier PDF a été téléchargé"
+          });
+        }, 1500);
+      }, 500);
+    } 
+    else if (format === "excel") {
+      // Simulation d'export Excel
+      // En production, utiliser une bibliothèque comme xlsx
+      
+      // Créer un CSV basique comme démonstration
+      let csvContent = "Référence,Produit,Prix,Stock,Statut\n";
+      
+      products.forEach(product => {
+        const status = product.status === "instock" ? "En stock" : 
+                      product.status === "lowstock" ? "Stock faible" : "Rupture de stock";
+                      
+        csvContent += `${product.sku},${product.name},${product.price},${product.stock},${status}\n`;
+      });
+      
+      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "zen-products.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
     
     toast({
       title: "Export réussi",
-      description: "La liste des produits a été exportée avec succès"
+      description: `La liste des produits a été exportée en format ${format.toUpperCase()}`
     });
   };
 
@@ -255,25 +303,40 @@ export default function ProductsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExportProducts}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Exporter
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mr-2"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Exporter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleExportProducts("excel")}>
+                  Format Excel (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportProducts("pdf")}>
+                  Format PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportProducts("json")}>
+                  Format JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"

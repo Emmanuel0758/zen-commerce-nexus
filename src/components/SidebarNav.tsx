@@ -37,6 +37,11 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    title: "QR Code",
+    href: "/qr-code",
+    icon: <QrCode />,
+  },
+  {
     title: "Produits",
     href: "/produits",
     icon: (

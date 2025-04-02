@@ -28,6 +28,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/qr-code" element={<QRCodePage />} />
             <Route path="/produits" element={<ProductsPage />} />
             <Route path="/commandes" element={<OrdersPage />} />
             <Route path="/clients" element={<ClientsPage />} />
@@ -35,7 +36,6 @@ const App = () => (
             <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/rapports" element={<ReportsPage />} />
             <Route path="/parametres" element={<SettingsPage />} />
-            <Route path="/qr-code" element={<QRCodePage />} />
             {/* Routes futures */}
             <Route path="*" element={<NotFound />} />
           </Routes>

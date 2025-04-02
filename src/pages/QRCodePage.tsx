@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { QRCodeGenerator } from "@/components/QRCodeGenerator";
@@ -63,7 +62,7 @@ export default function QRCodePage() {
           
           <TabsContent value="generator">
             <div className="grid gap-6 md:grid-cols-2">
-              <QRCodeGenerator defaultContent={INITIAL_CONTENT} />
+              <QRCodeGenerator initialContent={INITIAL_CONTENT} />
               
               <Card>
                 <CardHeader>

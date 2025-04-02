@@ -5,13 +5,15 @@ import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Download, RefreshCw, Calendar, Filter } from "lucide-react";
+import { Download, RefreshCw, Calendar, Filter, FileDown, FileType2, FileSpreadsheet } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function ReportsPage() {
   const { toast } = useToast();
   const [salesReportDialogOpen, setIsSalesReportDialogOpen] = useState(false);
   const [customersReportDialogOpen, setIsCustomersReportDialogOpen] = useState(false);
+  const [performanceDialogOpen, setPerformanceDialogOpen] = useState(false);
+  const [inventoryDialogOpen, setInventoryDialogOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateReport = (type: string) => {
@@ -30,11 +32,27 @@ export default function ReportsPage() {
         setIsSalesReportDialogOpen(false);
       } else if (type === "clients") {
         setIsCustomersReportDialogOpen(false);
+      } else if (type === "performance") {
+        setPerformanceDialogOpen(false);
+      } else if (type === "inventaire") {
+        setInventoryDialogOpen(false);
       }
+      
+      // Génération automatique du PDF après 1 seconde
+      setTimeout(() => {
+        const fileType = type === "ventes" ? "PDF" : "Excel";
+        downloadReport(type, fileType.toLowerCase());
+      }, 1000);
     }, 1500);
   };
 
-  const handleExportReport = (format: "pdf" | "excel" | "csv") => {
+  const downloadReport = (type: string, format: "pdf" | "excel" | "csv") => {
+    // Afficher un toast de téléchargement en cours
+    toast({
+      title: "Téléchargement en cours",
+      description: `Le rapport ${type} est en cours de téléchargement au format ${format.toUpperCase()}`
+    });
+    
     if (format === "csv") {
       // Simuler l'export CSV
       let csvContent = "Date,Produit,Quantité,Total\n";
@@ -45,13 +63,22 @@ export default function ReportsPage() {
       const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "rapport-ventes.csv");
+      link.setAttribute("download", `rapport-${type}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
     } else if (format === "pdf") {
-      // Simuler l'export PDF
+      // Simuler l'export PDF en créant un faux téléchargement
       setTimeout(() => {
+        const blob = new Blob(["Contenu du rapport PDF"], { type: "application/pdf" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `rapport-${type}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        
         toast({
           title: "Export PDF terminé",
           description: "Le fichier PDF a été téléchargé"
@@ -60,17 +87,21 @@ export default function ReportsPage() {
     } else if (format === "excel") {
       // Simuler l'export Excel
       setTimeout(() => {
+        const blob = new Blob(["Contenu du rapport Excel"], { type: "application/vnd.ms-excel" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `rapport-${type}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        
         toast({
           title: "Export Excel terminé",
           description: "Le fichier Excel a été téléchargé"
         });
       }, 1000);
     }
-    
-    toast({
-      title: "Export en cours",
-      description: `Le rapport est en cours d'export au format ${format.toUpperCase()}`
-    });
   };
 
   return (
@@ -109,15 +140,18 @@ export default function ReportsPage() {
                           <Download className="h-4 w-4" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-40">
+                      <PopoverContent className="w-48">
                         <div className="flex flex-col gap-1">
-                          <Button variant="ghost" className="justify-start text-sm" onClick={() => handleExportReport("pdf")}>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("ventes", "pdf")}>
+                            <FileDown className="h-4 w-4" />
                             Exporter en PDF
                           </Button>
-                          <Button variant="ghost" className="justify-start text-sm" onClick={() => handleExportReport("excel")}>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("ventes", "excel")}>
+                            <FileSpreadsheet className="h-4 w-4" />
                             Exporter en Excel
                           </Button>
-                          <Button variant="ghost" className="justify-start text-sm" onClick={() => handleExportReport("csv")}>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("ventes", "csv")}>
+                            <FileType2 className="h-4 w-4" />
                             Exporter en CSV
                           </Button>
                         </div>
@@ -181,15 +215,18 @@ export default function ReportsPage() {
                           <Download className="h-4 w-4" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-40">
+                      <PopoverContent className="w-48">
                         <div className="flex flex-col gap-1">
-                          <Button variant="ghost" className="justify-start text-sm" onClick={() => handleExportReport("pdf")}>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("clients", "pdf")}>
+                            <FileDown className="h-4 w-4" />
                             Exporter en PDF
                           </Button>
-                          <Button variant="ghost" className="justify-start text-sm" onClick={() => handleExportReport("excel")}>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("clients", "excel")}>
+                            <FileSpreadsheet className="h-4 w-4" />
                             Exporter en Excel
                           </Button>
-                          <Button variant="ghost" className="justify-start text-sm" onClick={() => handleExportReport("csv")}>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("clients", "csv")}>
+                            <FileType2 className="h-4 w-4" />
                             Exporter en CSV
                           </Button>
                         </div>
@@ -232,18 +269,46 @@ export default function ReportsPage() {
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Rapport de performance</CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => {
+                        toast({
+                          title: "Actualisation",
+                          description: "Les données de performance ont été actualisées"
+                        });
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48">
+                        <div className="flex flex-col gap-1">
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("performance", "pdf")}>
+                            <FileDown className="h-4 w-4" />
+                            Exporter en PDF
+                          </Button>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("performance", "excel")}>
+                            <FileSpreadsheet className="h-4 w-4" />
+                            Exporter en Excel
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col gap-4">
                     <Button
-                      onClick={() => {
-                        toast({
-                          title: "Rapport de performance",
-                          description: "Le rapport de performance sera disponible prochainement"
-                        });
-                      }}
+                      onClick={() => setPerformanceDialogOpen(true)}
                       variant="outline"
                     >
                       Génération automatique
@@ -256,18 +321,46 @@ export default function ReportsPage() {
               </Card>
               
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Analyse des stocks</CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => {
+                        toast({
+                          title: "Actualisation",
+                          description: "Les données des stocks ont été actualisées"
+                        });
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48">
+                        <div className="flex flex-col gap-1">
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("inventaire", "pdf")}>
+                            <FileDown className="h-4 w-4" />
+                            Exporter en PDF
+                          </Button>
+                          <Button variant="ghost" className="justify-start text-sm gap-2" onClick={() => downloadReport("inventaire", "excel")}>
+                            <FileSpreadsheet className="h-4 w-4" />
+                            Exporter en Excel
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col gap-4">
                     <Button
-                      onClick={() => {
-                        toast({
-                          title: "Analyse des stocks",
-                          description: "L'analyse des stocks sera disponible prochainement"
-                        });
-                      }}
+                      onClick={() => setInventoryDialogOpen(true)}
                       variant="outline"
                     >
                       Analyser les stocks
@@ -454,6 +547,124 @@ export default function ReportsPage() {
               disabled={isGenerating}
             >
               {isGenerating ? "Génération en cours..." : "Générer le rapport"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialogue Rapport Performance */}
+      <Dialog open={performanceDialogOpen} onOpenChange={setPerformanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rapport de performance</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="grid gap-4">
+              <div>
+                <label htmlFor="performance-period" className="text-sm font-medium block mb-1">
+                  Période d'analyse
+                </label>
+                <select
+                  id="performance-period"
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="month">Mensuel</option>
+                  <option value="quarter" selected>Trimestriel</option>
+                  <option value="year">Annuel</option>
+                  <option value="custom">Personnalisé</option>
+                </select>
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm font-medium">Métriques</label>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="include-sales" defaultChecked />
+                    <label htmlFor="include-sales" className="text-sm">Ventes</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="include-marketing" defaultChecked />
+                    <label htmlFor="include-marketing" className="text-sm">Performances marketing</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="include-customer" defaultChecked />
+                    <label htmlFor="include-customer" className="text-sm">Satisfaction client</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="include-logistics" defaultChecked />
+                    <label htmlFor="include-logistics" className="text-sm">Logistique</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPerformanceDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={() => handleGenerateReport("performance")}
+              disabled={isGenerating}
+            >
+              {isGenerating ? "Génération en cours..." : "Générer le rapport"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialogue Analyse des Stocks */}
+      <Dialog open={inventoryDialogOpen} onOpenChange={setInventoryDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Analyse des stocks</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="grid gap-4">
+              <div>
+                <label htmlFor="inventory-type" className="text-sm font-medium block mb-1">
+                  Type d'analyse
+                </label>
+                <select
+                  id="inventory-type"
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="low-stock">Produits en rupture de stock</option>
+                  <option value="best-sellers">Meilleures ventes</option>
+                  <option value="slow-moving">Produits à rotation lente</option>
+                  <option value="all" selected>Analyse complète</option>
+                </select>
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm font-medium">Options d'analyse</label>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="forecast-demand" defaultChecked />
+                    <label htmlFor="forecast-demand" className="text-sm">Prévision de la demande</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="reorder-suggestions" defaultChecked />
+                    <label htmlFor="reorder-suggestions" className="text-sm">Suggestions de réapprovisionnement</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="cost-analysis" defaultChecked />
+                    <label htmlFor="cost-analysis" className="text-sm">Analyse des coûts</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInventoryDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={() => handleGenerateReport("inventaire")}
+              disabled={isGenerating}
+            >
+              {isGenerating ? "Analyse en cours..." : "Analyser les stocks"}
             </Button>
           </DialogFooter>
         </DialogContent>

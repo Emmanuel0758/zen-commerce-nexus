@@ -45,7 +45,7 @@ export default function QRCodePage() {
       }
     }
   }, []);
-
+  
   return (
     <Layout>
       <div className="container py-6">
@@ -62,6 +62,7 @@ export default function QRCodePage() {
           
           <TabsContent value="generator">
             <div className="grid gap-6 md:grid-cols-2">
+              {/* Pass the initialContent prop */}
               <QRCodeGenerator initialContent={INITIAL_CONTENT} />
               
               <Card>

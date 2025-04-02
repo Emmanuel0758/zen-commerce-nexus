@@ -52,7 +52,7 @@
     --card: 222 47% 14%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 11%;
+    --popover: 222 47% 14%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 262 83% 58%;
@@ -85,6 +85,7 @@
   }
 }
 
+/* Keep all existing base and component styles */
 @layer base {
   * {
     @apply border-border;
@@ -118,9 +119,18 @@
   .glass-card {
     @apply bg-white bg-opacity-70 dark:bg-card dark:bg-opacity-70 backdrop-blur-md border border-border shadow-lg;
   }
+
+  /* Input styles for dialogs and popovers to ensure better contrast */
+  .dialog-input, 
+  [role="dialog"] input,
+  [role="dialog"] select,
+  [role="dialog"] textarea {
+    @apply bg-muted border-input text-foreground dark:bg-muted dark:text-foreground;
+  }
 }
 
 @layer components {
+  /* Keep all existing component styles */
   .stat-card {
     @apply relative p-5 rounded-xl flex flex-col space-y-2 transition-all hover:scale-[1.02] hover:shadow-md;
   }

@@ -6,25 +6,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, Download, Share2, Loader2, Save, Link } from "lucide-react";
+import { QrCode, Download, Share2, Loader2, Save, Link, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QRCode from "react-qr-code";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Maximum content length for QR code to prevent overflow error
+const MAX_QR_CONTENT_LENGTH = 800;
 
 type QRCodeGeneratorProps = {
   defaultContent?: string;
 };
 
 export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
+  // Trim default content if it's too long
+  const trimmedDefaultContent = defaultContent.length > MAX_QR_CONTENT_LENGTH 
+    ? defaultContent.substring(0, MAX_QR_CONTENT_LENGTH) 
+    : defaultContent;
+    
   // States for QR code content and styling
-  const [content, setContent] = useState(defaultContent);
+  const [content, setContent] = useState(trimmedDefaultContent);
   const [url, setUrl] = useState("");
   const [color, setColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [size, setSize] = useState("200");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [qrValue, setQrValue] = useState(defaultContent);
-  const [hasGenerated, setHasGenerated] = useState(!!defaultContent);
+  const [qrValue, setQrValue] = useState("");
+  const [hasGenerated, setHasGenerated] = useState(false);
   const [activeTab, setActiveTab] = useState("text");
   const [savedQRCodes, setSavedQRCodes] = useState<Array<{
     id: string;
@@ -34,8 +43,24 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
     bgColor: string;
     size: string;
   }>>([]);
+  const [contentWarning, setContentWarning] = useState<string | null>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const checkContentLength = (text: string) => {
+    if (text.length > MAX_QR_CONTENT_LENGTH) {
+      setContentWarning(`Le contenu dépasse la limite de ${MAX_QR_CONTENT_LENGTH} caractères. Il sera tronqué lors de la génération.`);
+      return text.substring(0, MAX_QR_CONTENT_LENGTH);
+    }
+    setContentWarning(null);
+    return text;
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setContent(newContent);
+    checkContentLength(newContent);
+  };
 
   const handleGenerate = () => {
     const contentToUse = activeTab === "text" ? content : url;
@@ -52,15 +77,27 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
     }
 
     // For URLs, validate format
+    let finalContent = contentToUse;
     if (activeTab === "url" && !url.startsWith("http")) {
-      setUrl(prev => `https://${prev}`);
+      finalContent = `https://${url}`;
+      setUrl(finalContent);
+    }
+
+    // Trim content if it's too long
+    if (finalContent.length > MAX_QR_CONTENT_LENGTH) {
+      finalContent = finalContent.substring(0, MAX_QR_CONTENT_LENGTH);
+      toast({
+        title: "Contenu tronqué",
+        description: `Le contenu a été limité à ${MAX_QR_CONTENT_LENGTH} caractères pour permettre la génération du QR code.`,
+        variant: "warning",
+      });
     }
 
     setIsGenerating(true);
     
     // Simulate generation process
     setTimeout(() => {
-      setQrValue(activeTab === "text" ? content : url);
+      setQrValue(finalContent);
       setHasGenerated(true);
       setIsGenerating(false);
       
@@ -120,7 +157,7 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
       });
     };
     
-    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+    img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`;
   };
 
   const handleShare = () => {
@@ -151,6 +188,8 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
   };
 
   const handleSave = () => {
+    if (!qrValue) return;
+    
     const newQrCode = {
       id: `qr-${Date.now()}`,
       value: qrValue,
@@ -162,7 +201,23 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
       size,
     };
     
-    setSavedQRCodes(prev => [newQrCode, ...prev]);
+    // Save to localStorage
+    const savedCodes = localStorage.getItem('savedQRCodes');
+    let updatedCodes = [];
+    
+    if (savedCodes) {
+      try {
+        const parsedCodes = JSON.parse(savedCodes);
+        updatedCodes = [newQrCode, ...parsedCodes];
+      } catch (error) {
+        updatedCodes = [newQrCode];
+      }
+    } else {
+      updatedCodes = [newQrCode];
+    }
+    
+    localStorage.setItem('savedQRCodes', JSON.stringify(updatedCodes));
+    setSavedQRCodes(updatedCodes);
     
     toast({
       title: "QR Code sauvegardé",
@@ -198,11 +253,23 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
               <Label htmlFor="qr-content">Contenu</Label>
               <Textarea
                 id="qr-content"
-                placeholder="Entrez le texte à encoder"
+                placeholder="Entrez le texte à encoder (maximum 800 caractères)"
                 className="resize-none min-h-[150px]"
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={handleContentChange}
               />
+              {contentWarning && (
+                <Alert variant="warning" className="mt-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Attention</AlertTitle>
+                  <AlertDescription>
+                    {contentWarning}
+                  </AlertDescription>
+                </Alert>
+              )}
+              <div className="text-xs text-muted-foreground text-right mt-1">
+                {content.length} / {MAX_QR_CONTENT_LENGTH} caractères
+              </div>
             </div>
           </TabsContent>
           
@@ -300,7 +367,7 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
           </Button>
         </div>
 
-        {hasGenerated && (
+        {hasGenerated && qrValue && (
           <div 
             ref={qrRef}
             className="flex flex-col items-center justify-center bg-white rounded-md p-8 border shadow-sm"
@@ -324,7 +391,7 @@ export function QRCodeGenerator({ defaultContent = "" }: QRCodeGeneratorProps) {
           </div>
         )}
       </CardContent>
-      {hasGenerated && (
+      {hasGenerated && qrValue && (
         <CardFooter className="flex-wrap gap-2 justify-end">
           <Button variant="outline" onClick={handleSave}>
             <Save className="mr-2 h-4 w-4" />

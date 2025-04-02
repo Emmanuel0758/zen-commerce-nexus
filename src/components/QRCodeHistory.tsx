@@ -35,7 +35,13 @@ export function QRCodeHistory() {
     const savedCodes = localStorage.getItem('savedQRCodes');
     if (savedCodes) {
       try {
-        setSavedQRCodes(JSON.parse(savedCodes));
+        const parsedCodes = JSON.parse(savedCodes);
+        // Ajouter la date si elle n'existe pas
+        const codesWithDates = parsedCodes.map((code: any) => ({
+          ...code,
+          date: code.date ? new Date(code.date) : new Date()
+        }));
+        setSavedQRCodes(codesWithDates);
       } catch (error) {
         console.error("Error parsing saved QR codes:", error);
       }
@@ -47,9 +53,9 @@ export function QRCodeHistory() {
     localStorage.setItem('savedQRCodes', JSON.stringify(savedQRCodes));
   }, [savedQRCodes]);
 
-  // Mock data for demonstration
+  // Ajoutons des exemples uniquement si pas de codes existants
   useEffect(() => {
-    if (savedQRCodes.length === 0) {
+    if (savedQRCodes.length === 0 && !localStorage.getItem('savedQRCodes')) {
       setSavedQRCodes([
         {
           id: "qr-1",
@@ -71,7 +77,7 @@ export function QRCodeHistory() {
         }
       ]);
     }
-  }, []);
+  }, [savedQRCodes.length]);
 
   const handleViewQR = (qrCode: SavedQRCode) => {
     setSelectedQR(qrCode);
@@ -79,7 +85,12 @@ export function QRCodeHistory() {
   };
 
   const handleDeleteQR = (id: string) => {
-    setSavedQRCodes(prev => prev.filter(qr => qr.id !== id));
+    setSavedQRCodes(prev => {
+      const updated = prev.filter(qr => qr.id !== id);
+      localStorage.setItem('savedQRCodes', JSON.stringify(updated));
+      return updated;
+    });
+    
     toast({
       title: "QR code supprimé",
       description: "Le QR code a été supprimé avec succès."
@@ -87,23 +98,25 @@ export function QRCodeHistory() {
   };
 
   const handleDownloadQR = (qrCode: SavedQRCode) => {
-    // Create a temporary SVG element
+    // Create a temporary container
     const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.top = '-9999px';
     document.body.appendChild(tempContainer);
     
-    // Render the QR code temporarily
-    const tempQRCode = document.createElement('div');
-    tempContainer.appendChild(tempQRCode);
+    // Set up the QR code
+    tempContainer.innerHTML = '';
     
-    const qrInstance = <QRCode
-      value={qrCode.value}
-      size={parseInt(qrCode.size)}
-      fgColor={qrCode.color}
-      bgColor={qrCode.bgColor}
-      level="H"
-    />;
+    // Render the QR code to the container
+    const qrElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    tempContainer.appendChild(qrElement);
+    
+    // Get the SVG from the container
+    const qrInstance = new QRCode(qrElement, {
+      value: qrCode.value,
+      size: parseInt(qrCode.size),
+      fgColor: qrCode.color,
+      bgColor: qrCode.bgColor,
+      level: "H"
+    });
     
     // Use a canvas to create the download
     const canvas = document.createElement("canvas");
@@ -145,7 +158,28 @@ export function QRCodeHistory() {
       });
     };
     
-    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+    img.onerror = (e) => {
+      console.error("Erreur lors du chargement de l'image:", e);
+      toast({
+        title: "Erreur de téléchargement",
+        description: "Impossible de télécharger le QR code",
+        variant: "destructive",
+      });
+      document.body.removeChild(tempContainer);
+    };
+    
+    try {
+      // Utiliser une méthode compatible avec tous les navigateurs pour encoder les SVG
+      img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`;
+    } catch (error) {
+      console.error("Erreur lors de l'encodage SVG:", error);
+      toast({
+        title: "Erreur de téléchargement",
+        description: "Impossible de télécharger le QR code",
+        variant: "destructive",
+      });
+      document.body.removeChild(tempContainer);
+    }
   };
 
   // Format date for display
@@ -178,13 +212,20 @@ export function QRCodeHistory() {
                     className="p-4 flex justify-center items-center bg-white"
                     style={{ backgroundColor: qrCode.bgColor }}
                   >
-                    <QRCode
-                      value={qrCode.value}
-                      size={150}
-                      fgColor={qrCode.color}
-                      bgColor={qrCode.bgColor}
-                      level="H"
-                    />
+                    {qrCode.value.length <= 800 ? (
+                      <QRCode
+                        value={qrCode.value}
+                        size={150}
+                        fgColor={qrCode.color}
+                        bgColor={qrCode.bgColor}
+                        level="H"
+                      />
+                    ) : (
+                      <div className="text-center p-4 text-muted-foreground">
+                        <p>QR code trop volumineux</p>
+                        <p className="text-xs">Contenu supérieur à 800 caractères</p>
+                      </div>
+                    )}
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-medium">{qrCode.name}</h3>
@@ -225,18 +266,25 @@ export function QRCodeHistory() {
           <div className="flex flex-col items-center justify-center p-6">
             {selectedQR && (
               <>
-                <div 
-                  className="p-6 rounded-md mb-4"
-                  style={{ backgroundColor: selectedQR.bgColor }}
-                >
-                  <QRCode
-                    value={selectedQR.value}
-                    size={200}
-                    fgColor={selectedQR.color}
-                    bgColor={selectedQR.bgColor}
-                    level="H"
-                  />
-                </div>
+                {selectedQR.value.length <= 800 ? (
+                  <div 
+                    className="p-6 rounded-md mb-4"
+                    style={{ backgroundColor: selectedQR.bgColor }}
+                  >
+                    <QRCode
+                      value={selectedQR.value}
+                      size={200}
+                      fgColor={selectedQR.color}
+                      bgColor={selectedQR.bgColor}
+                      level="H"
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center p-8 border rounded-md mb-4 text-muted-foreground">
+                    <p>Ce QR code contient trop de données pour être affiché</p>
+                    <p className="text-xs mt-2">Contenu supérieur à 800 caractères</p>
+                  </div>
+                )}
                 <p className="text-sm break-all max-h-24 overflow-auto">
                   {selectedQR.value}
                 </p>
@@ -247,6 +295,7 @@ export function QRCodeHistory() {
             <Button 
               onClick={() => selectedQR && handleDownloadQR(selectedQR)} 
               className="w-full"
+              disabled={selectedQR?.value.length > 800}
             >
               <Download className="mr-2 h-4 w-4" />
               Télécharger

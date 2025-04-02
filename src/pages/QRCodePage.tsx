@@ -1,10 +1,31 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { QRCodeGenerator } from "@/components/QRCodeGenerator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QRCodeHistory } from "@/components/QRCodeHistory";
+
+// Texte initial raccourci pour éviter l'erreur de débordement
+const INITIAL_CONTENT = `🌿 ZEN – Mouchoirs Ultra-Doux 🌿
+🔹 Le confort et la douceur au quotidien
+Offrez-vous une sensation de bien-être incomparable avec les mouchoirs ZEN.
+
+🛠️ Caractéristiques:
+✅ Dimensions: 200 x 166 mm
+✅ 3 plis pour absorption maximale
+✅ 80 mouchoirs par boîte
+✅ Ultra-doux et résistants
+✅ Sans parfum
+
+🌱 Pourquoi choisir ZEN?
+🌱 Parfaits pour peaux sensibles
+🛡️ Usage unique hygiénique
+💚 Emballage écologique
+
+🏢 DRINX Côte d'Ivoire
+📞 07 97 29 XX 08
+🌐 www.zen-tissues.ci`;
 
 export default function QRCodePage() {
   const [savedQRCodes, setSavedQRCodes] = useState<Array<{
@@ -17,15 +38,23 @@ export default function QRCodePage() {
     date: Date;
   }>>([]);
 
-  const handleSaveQRCode = (qrCode: any) => {
-    setSavedQRCodes(prev => [
-      {
-        ...qrCode,
-        date: new Date()
-      },
-      ...prev
-    ]);
-  };
+  // Charger les codes QR sauvegardés depuis localStorage
+  useEffect(() => {
+    const savedCodes = localStorage.getItem('savedQRCodes');
+    if (savedCodes) {
+      try {
+        const parsedCodes = JSON.parse(savedCodes);
+        // Ajouter la date si elle n'existe pas
+        const codesWithDates = parsedCodes.map((code: any) => ({
+          ...code,
+          date: code.date ? new Date(code.date) : new Date()
+        }));
+        setSavedQRCodes(codesWithDates);
+      } catch (error) {
+        console.error("Erreur lors du chargement des codes QR:", error);
+      }
+    }
+  }, []);
 
   return (
     <Layout>
@@ -43,41 +72,7 @@ export default function QRCodePage() {
           
           <TabsContent value="generator">
             <div className="grid gap-6 md:grid-cols-2">
-              <QRCodeGenerator 
-                defaultContent={`🌿 ZEN – Mouchoirs Ultra-Doux 🌿
-🔹 Le confort et la douceur au quotidien
-Offrez-vous une sensation de bien-être incomparable avec les mouchoirs ZEN. Conçus pour apporter une douceur ultime et une absorption optimale, ils sont idéaux pour tous les usages quotidiens.
-
-
-🛠️ Caractéristiques du produit
-✅ Dimensions du mouchoir : 200 x 166 mm
-✅ Nombre de plis : 3 plis pour une absorption maximale
-✅ Nombre de mouchoirs par boîte : 80 (soit 240 feuilles)
-✅ Texture : Ultra-douce et résistante, idéale pour les peaux sensibles
-✅ Sans parfum et sans additifs agressifs
-✅ Emballage écologique : Conçu avec des matériaux recyclables
-
-🌱 Pourquoi choisir les mouchoirs ZEN ?
-🌱 Douceur et confort : Parfaits pour les peaux sensibles, nos mouchoirs offrent une caresse soyeuse
-🌬️ Ultra-absorbant : La technologie 3 plis garantit une excellente absorption sans se déchirer
-🛡️ Hygiène assurée : Chaque mouchoir est à usage unique pour limiter la propagation des germes
-💚 Engagement éco-responsable : Nous utilisons des fibres certifiées et un emballage recyclable pour réduire l'empreinte environnementale
-
-
-🛍️ Utilisations recommandées
-🎬 Soin du visage : Idéal pour se moucher, se démaquiller, ou absorber l'excès de sébum
-💻 Au bureau : Essuyez rapidement de petits accidents (renversement de café, nettoyage d'écran)
-🛋️ En voyage : Format compact et pratique à glisser dans un sac ou une boîte à gants
-🌟 En famille : Convient aux adultes comme aux enfants, grâce à sa douceur exceptionnelle
-
-🌍 Contact & Informations
-🏢 Produit par : DRINX Côte d'Ivoire
-📞 Contact : 07 97 29 XX 08
-🌐 Site Web : www.zen-tissues.ci (exemple)
-🎨 Réseaux Sociaux : Retrouvez-nous sur Facebook, Instagram et Twitter pour plus d'actualités et de promotions.
-
-Commander Maintenant`}
-              />
+              <QRCodeGenerator defaultContent={INITIAL_CONTENT} />
               
               <Card>
                 <CardHeader>
@@ -85,16 +80,42 @@ Commander Maintenant`}
                   <CardDescription>Les QR codes que vous avez générés récemment</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="border rounded-md p-4 flex flex-col items-center">
-                      <div className="w-full aspect-square bg-gray-100 mb-2 flex items-center justify-center text-xs text-gray-400">QR #1</div>
-                      <span className="text-sm font-medium truncate w-full text-center">Mouchoirs ZEN</span>
+                  {savedQRCodes.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {savedQRCodes.slice(0, 4).map((qrCode) => (
+                        <div key={qrCode.id} className="border rounded-md p-4 flex flex-col items-center">
+                          <div 
+                            className="w-full aspect-square mb-2 flex items-center justify-center"
+                            style={{ backgroundColor: qrCode.bgColor }}
+                          >
+                            {/* Mini preview */}
+                            <svg 
+                              viewBox="0 0 32 32" 
+                              fill="none"
+                              className="w-full h-full p-2" 
+                              style={{ color: qrCode.color }}
+                            >
+                              <rect x="8" y="8" width="4" height="4" fill="currentColor" />
+                              <rect x="12" y="8" width="4" height="4" fill="currentColor" />
+                              <rect x="20" y="8" width="4" height="4" fill="currentColor" />
+                              <rect x="8" y="12" width="4" height="4" fill="currentColor" />
+                              <rect x="20" y="12" width="4" height="4" fill="currentColor" />
+                              <rect x="8" y="20" width="4" height="4" fill="currentColor" />
+                              <rect x="12" y="20" width="4" height="4" fill="currentColor" />
+                              <rect x="20" y="20" width="4" height="4" fill="currentColor" />
+                              <rect x="16" y="16" width="4" height="4" fill="currentColor" />
+                            </svg>
+                          </div>
+                          <span className="text-sm font-medium truncate w-full text-center">{qrCode.name}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="border rounded-md p-4 flex flex-col items-center">
-                      <div className="w-full aspect-square bg-gray-100 mb-2 flex items-center justify-center text-xs text-gray-400">Nouveau</div>
-                      <span className="text-sm font-medium truncate w-full text-center">Ajouter un QR</span>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Aucun QR code sauvegardé</p>
+                      <p className="text-sm">Générez et sauvegardez des QR codes pour les voir ici</p>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

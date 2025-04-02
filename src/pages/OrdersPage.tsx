@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Download, Plus, FileDown, Search, Filter } from "lucide-react";
+import { jsPDF } from "jspdf";
+import { useAppSettings } from "@/hooks/use-app-settings";
 
 type Order = {
   id: string;
@@ -119,6 +122,7 @@ export default function OrdersPage() {
   const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false);
   const [isViewOrderDialogOpen, setIsViewOrderDialogOpen] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+  const { settings } = useAppSettings();
 
   const { toast } = useToast();
 
@@ -208,18 +212,114 @@ export default function OrdersPage() {
   };
 
   const handleDownloadInvoice = (order: Order) => {
+    // Create a new PDF document
+    const doc = new jsPDF();
+    
+    // Add company logo if available
+    if (settings.logo) {
+      try {
+        doc.addImage(settings.logo, 'JPEG', 15, 10, 30, 30);
+      } catch (error) {
+        console.error("Erreur lors du chargement du logo:", error);
+        // Fallback if logo can't be loaded
+        doc.setFontSize(22);
+        doc.setTextColor(128, 0, 128); // Purple for logo text
+        doc.text(settings.appName.substring(0, 1), 25, 25);
+      }
+    }
+    
+    // Add company information
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text(settings.logo ? '50' : '15', '25', settings.appName.toUpperCase());
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('123 Avenue du Commerce', settings.logo ? 50 : 15, 32);
+    doc.text('75001 Paris, France', settings.logo ? 50 : 15, 37);
+    doc.text('contact@zenbeverages.com', settings.logo ? 50 : 15, 42);
+    
+    // Add invoice title and number
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FACTURE', 105, 55, { align: 'center' });
+    
+    doc.setFontSize(11);
+    doc.text(`N° ${order.id.replace('ZEN-', 'INV-')}`, 105, 62, { align: 'center' });
+    doc.text(`Date: ${order.date}`, 105, 68, { align: 'center' });
+    
+    // Add billing information
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Facturé à:', 15, 80);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.customer, 15, 87);
+    doc.text('client@example.com', 15, 93);
+    
+    // Add invoice details
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    
+    // Table header
+    doc.line(15, 105, 195, 105);
+    doc.text('Description', 17, 112);
+    doc.text('Qté', 100, 112, { align: 'center' });
+    doc.text('Prix', 140, 112, { align: 'right' });
+    doc.text('Total', 190, 112, { align: 'right' });
+    doc.line(15, 115, 195, 115);
+    
+    let y = 122;
+    let totalAmount = 0;
+    
+    // Add line items
+    doc.setFont('helvetica', 'normal');
+    doc.text('Zen Classic (500ml)', 17, y);
+    doc.text('2', 100, y, { align: 'center' });
+    doc.text('9 999 FCFA', 140, y, { align: 'right' });
+    doc.text('19 998 FCFA', 190, y, { align: 'right' });
+    totalAmount += 19998;
+    
+    if (order.items > 1) {
+      y += 10;
+      doc.text('Zen Boost (250ml)', 17, y);
+      doc.text('1', 100, y, { align: 'center' });
+      doc.text('7 250 FCFA', 140, y, { align: 'right' });
+      doc.text('7 250 FCFA', 190, y, { align: 'right' });
+      totalAmount += 7250;
+    }
+    
+    if (order.items > 2) {
+      y += 10;
+      doc.text('Zen Relax (1L)', 17, y);
+      doc.text('1', 100, y, { align: 'center' });
+      doc.text('14 995 FCFA', 140, y, { align: 'right' });
+      doc.text('14 995 FCFA', 190, y, { align: 'right' });
+      totalAmount += 14995;
+    }
+    
+    // Add total
+    y += 20;
+    doc.line(15, y - 5, 195, y - 5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total', 150, y);
+    doc.text(`${totalAmount.toLocaleString('fr-FR')} FCFA`, 190, y, { align: 'right' });
+    
+    // Add footer
+    y += 40;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Merci pour votre commande!', 105, y, { align: 'center' });
+    doc.text(`${settings.appName} - SIRET: 12345678900000`, 105, y + 5, { align: 'center' });
+    
+    // Save the PDF
+    doc.save(`facture-${order.id}.pdf`);
+    
     toast({
-      title: "Génération de facture",
-      description: "Préparation du fichier PDF..."
+      title: "Facture téléchargée",
+      description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format PDF`
     });
     
-    setTimeout(() => {
-      toast({
-        title: "Facture téléchargée",
-        description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format PDF`
-      });
-      setIsInvoiceDialogOpen(false);
-    }, 1500);
+    setIsInvoiceDialogOpen(false);
   };
 
   return (
@@ -345,12 +445,13 @@ export default function OrdersPage() {
               <input
                 type="search"
                 placeholder="Rechercher..."
-                className="rounded-md border border-input px-3 py-1 text-sm"
+                className="rounded-md border border-input px-3 py-1 text-sm text-foreground"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </CardHeader>
+          
           <CardContent>
             <Table>
               <TableHeader>
@@ -467,7 +568,15 @@ export default function OrdersPage() {
           {currentOrder && (
             <div className="py-4">
               <div className="border-b pb-4 mb-4">
-                <h3 className="font-bold text-xl mb-1">ZEN BEVERAGES</h3>
+                {settings.logo ? (
+                  <img 
+                    src={settings.logo} 
+                    alt={settings.appName} 
+                    className="h-10 w-auto object-contain mb-2" 
+                  />
+                ) : (
+                  <h3 className="font-bold text-xl mb-1">{settings.appName}</h3>
+                )}
                 <p className="text-sm">123 Avenue du Commerce</p>
                 <p className="text-sm">75001 Paris, France</p>
                 <p className="text-sm">contact@zenbeverages.com</p>

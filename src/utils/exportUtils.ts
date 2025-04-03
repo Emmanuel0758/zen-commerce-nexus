@@ -1,19 +1,7 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
-
-// Type augmentation for jsPDF with autotable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => any;
-    lastAutoTable: { finalY: number };
-    internal: {
-      getNumberOfPages: () => number;
-      pageSize: { width: number, height: number };
-    };
-  }
-}
+import "@/types/jspdf-extensions";
 
 type ExportFormat = "json" | "pdf" | "excel";
 
@@ -69,19 +57,14 @@ const exportExcel = (data: ExportableData, fileName: string): boolean => {
   try {
     let csvContent = "";
     
-    // Logique pour différents types de données
     if (Array.isArray(data)) {
-      // Si c'est un tableau d'objets
       if (data.length > 0 && typeof data[0] === 'object') {
-        // En-têtes (clés du premier objet)
         const headers = Object.keys(data[0]);
         csvContent += headers.join(',') + '\n';
         
-        // Lignes de données
         data.forEach(item => {
           const row = headers.map(header => {
             let cell = item[header]?.toString() || '';
-            // Échapper les virgules et les guillemets si nécessaire
             if (cell.includes(',') || cell.includes('"')) {
               cell = `"${cell.replace(/"/g, '""')}"`;
             }
@@ -91,23 +74,15 @@ const exportExcel = (data: ExportableData, fileName: string): boolean => {
         });
       }
     } else if (typeof data === 'object') {
-      // Pour un objet avec des tableaux imbriqués
       for (const [key, value] of Object.entries(data)) {
         if (Array.isArray(value)) {
-          // Si la propriété est un tableau d'objets
           if (value.length > 0 && typeof value[0] === 'object') {
-            // En-têtes
             const headers = Object.keys(value[0]);
+            const rows = value.map(item => headers.map(k => item[k]?.toString() || ''));
+            
             csvContent += headers.join(',') + '\n';
             
-            value.forEach(item => {
-              const row = headers.map(header => {
-                let cell = item[header]?.toString() || '';
-                if (cell.includes(',') || cell.includes('"')) {
-                  cell = `"${cell.replace(/"/g, '""')}"`;
-                }
-                return cell;
-              });
+            rows.forEach(row => {
               csvContent += row.join(',') + '\n';
             });
           }
@@ -136,18 +111,14 @@ const exportExcel = (data: ExportableData, fileName: string): boolean => {
  */
 const exportPDF = (data: ExportableData, fileName: string): boolean => {
   try {
-    // Définir le document PDF
     const doc = new jsPDF();
     
-    // Ajouter un titre
     doc.setFontSize(16);
     doc.text(fileName, 14, 22);
     doc.setFontSize(12);
     doc.text(`Exporté le ${new Date().toLocaleDateString()}`, 14, 30);
     
-    // Traiter différents types de données
     if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
-      // Créer un tableau pour jspdf-autotable
       const headers = Object.keys(data[0]);
       const rows = data.map(item => headers.map(key => item[key]?.toString() || ''));
       
@@ -160,17 +131,14 @@ const exportPDF = (data: ExportableData, fileName: string): boolean => {
         headStyles: { fillColor: [41, 128, 185], textColor: 255 }
       });
     } else if (typeof data === 'object') {
-      // Pour les objets avec propriétés imbriquées
       let yPos = 40;
       
       for (const [key, value] of Object.entries(data)) {
         if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
-          // Ajouter un sous-titre pour la section
           doc.setFontSize(12);
           doc.text(key, 14, yPos);
           yPos += 8;
           
-          // Obtenir les en-têtes à partir du premier objet
           const headers = Object.keys(value[0]);
           const rows = value.map(item => headers.map(k => item[k]?.toString() || ''));
           
@@ -183,13 +151,11 @@ const exportPDF = (data: ExportableData, fileName: string): boolean => {
             headStyles: { fillColor: [41, 128, 185], textColor: 255 }
           });
           
-          // Mettre à jour la position Y pour le prochain tableau
           yPos = doc.lastAutoTable.finalY + 15;
         }
       }
     }
     
-    // Pagination
     const pageCount = doc.internal.getNumberOfPages();
     for(let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -198,7 +164,6 @@ const exportPDF = (data: ExportableData, fileName: string): boolean => {
       doc.text(`Page ${i} sur ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
     }
     
-    // Enregistrer le PDF
     doc.save(`${fileName}.pdf`);
     return true;
   } catch (error) {

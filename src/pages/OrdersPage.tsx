@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,8 @@ import { Download, FileDown } from "lucide-react";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { useAppSettings } from "@/hooks/use-app-settings";
+// Import the type extensions
+import "@/types/jspdf-extensions";
 
 type Order = {
   id: string;
@@ -115,17 +116,6 @@ const demoOrders: Order[] = [
     status: "completed",
   },
 ];
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => any;
-    lastAutoTable: { finalY: number };
-    internal: {
-      getNumberOfPages: () => number;
-      pageSize: { width: number, height: number };
-    };
-  }
-}
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>(demoOrders);

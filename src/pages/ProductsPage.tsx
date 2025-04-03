@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -35,17 +34,7 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { exportData } from "@/utils/exportUtils";
 import { useAppSettings } from "@/hooks/use-app-settings";
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => any;
-    lastAutoTable: { finalY: number };
-    internal: {
-      getNumberOfPages: () => number;
-      pageSize: { width: number, height: number };
-    };
-  }
-}
+import "@/types/jspdf-extensions";
 
 type Product = {
   id: string;

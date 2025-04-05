@@ -81,6 +81,8 @@ export default function ProjectsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [editMode, setEditMode] = useState(false);
   const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   const initialProjects = [
     {
@@ -201,9 +203,16 @@ export default function ProjectsPage() {
   useEffect(() => {
     const savedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
     if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
+      try {
+        setProjects(JSON.parse(savedProjects));
+      } catch (error) {
+        console.error("Erreur lors du chargement des projets:", error);
+        setProjects(initialProjects);
+        localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(initialProjects));
+      }
     } else {
       setProjects(initialProjects);
+      localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(initialProjects));
     }
   }, []);
 
@@ -254,7 +263,7 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (!newProject.name || !newProject.deadline) {
       toast({
         title: "Champs requis",
@@ -264,34 +273,50 @@ export default function ProjectsPage() {
       return;
     }
 
-    const projectId = `PRJ-${String(projects.length + 1).padStart(3, "0")}`;
-    const createdProject = {
-      ...newProject,
-      id: projectId,
-      startDate: new Date().toISOString().split("T")[0],
-    };
+    setIsCreatingProject(true);
 
-    setProjects((prevProjects) => [...prevProjects, createdProject]);
-    setNewProjectDialogOpen(false);
-    setNewProject({
-      name: "",
-      description: "",
-      type: "Agile",
-      status: "Planifié",
-      priority: "Normale",
-      deadline: "",
-      assignedTo: "Non assigné",
-      teamSize: 0,
-      budget: "",
-      client: "",
-      tasks: { total: 0, completed: 0 },
-      progress: 0
-    });
+    try {
+      const projectId = `PRJ-${String(projects.length + 1).padStart(3, "0")}`;
+      const createdProject = {
+        ...newProject,
+        id: projectId,
+        startDate: new Date().toISOString().split("T")[0],
+      };
 
-    toast({
-      title: "Projet créé",
-      description: `Le projet "${createdProject.name}" a été créé avec succès.`,
-    });
+      // Petit délai pour simuler le traitement
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setProjects((prevProjects) => [...prevProjects, createdProject]);
+      setNewProjectDialogOpen(false);
+      setNewProject({
+        name: "",
+        description: "",
+        type: "Agile",
+        status: "Planifié",
+        priority: "Normale",
+        deadline: "",
+        assignedTo: "Non assigné",
+        teamSize: 0,
+        budget: "",
+        client: "",
+        tasks: { total: 0, completed: 0 },
+        progress: 0
+      });
+
+      toast({
+        title: "Projet créé",
+        description: `Le projet "${createdProject.name}" a été créé avec succès.`,
+      });
+    } catch (error) {
+      console.error("Erreur lors de la création du projet:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création du projet.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingProject(false);
+    }
   };
 
   const handleViewProjectDetails = (project) => {
@@ -347,9 +372,15 @@ export default function ProjectsPage() {
   };
   
   const handleExportProjects = async (format) => {
+    setIsExporting(true);
     try {
       const success = await exportData(projects, format, "Projets");
-      if (!success) {
+      if (success) {
+        toast({
+          title: "Exportation réussie",
+          description: `Les projets ont été exportés avec succès au format ${format.toUpperCase()}.`,
+        });
+      } else {
         toast({
           title: "Erreur d'exportation",
           description: `Une erreur est survenue lors de l'exportation au format ${format.toUpperCase()}`,
@@ -363,6 +394,8 @@ export default function ProjectsPage() {
         description: "Une erreur inattendue est survenue",
         variant: "destructive"
       });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -384,7 +417,7 @@ export default function ProjectsPage() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" disabled={isExporting || projects.length === 0}>
                   <Download className="h-4 w-4 mr-2" />
                   Exporter
                   <ChevronDown className="h-4 w-4 ml-2" />
@@ -1028,7 +1061,13 @@ export default function ProjectsPage() {
             <Button variant="outline" onClick={() => setNewProjectDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleCreateProject}>Créer le projet</Button>
+            <Button 
+              onClick={handleCreateProject} 
+              loading={isCreatingProject} 
+              disabled={isCreatingProject}
+            >
+              {isCreatingProject ? "Création..." : "Créer le projet"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

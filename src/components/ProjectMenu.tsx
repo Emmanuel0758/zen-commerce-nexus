@@ -27,7 +27,6 @@ export function ProjectMenu({
   onDelete,
 }: ProjectMenuProps) {
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = React.useState(false);
 
   const handleShare = () => {
     // In a real app, this would show a sharing dialog or copy a link to clipboard
@@ -46,16 +45,14 @@ export function ProjectMenu({
         });
       }
     );
-    setIsOpen(false);
   };
 
   const handleItemClick = (callback: () => void) => {
     callback();
-    setIsOpen(false);
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 w-8 p-0" aria-label="Menu">
           <MoreHorizontal className="h-4 w-4" />

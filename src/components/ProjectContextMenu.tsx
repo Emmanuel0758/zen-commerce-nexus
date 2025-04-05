@@ -28,7 +28,6 @@ export function ProjectContextMenu({
   onDelete,
 }: ProjectContextMenuProps) {
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = React.useState(false);
 
   const handleShare = () => {
     // In a real app, this would show a sharing dialog or copy a link to clipboard
@@ -47,16 +46,14 @@ export function ProjectContextMenu({
         });
       }
     );
-    setIsOpen(false);
   };
 
   const handleItemClick = (callback: () => void) => {
     callback();
-    setIsOpen(false);
   };
 
   return (
-    <ContextMenu open={isOpen} onOpenChange={setIsOpen}>
+    <ContextMenu>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-64">
         <ContextMenuItem onClick={() => handleItemClick(onView)}>

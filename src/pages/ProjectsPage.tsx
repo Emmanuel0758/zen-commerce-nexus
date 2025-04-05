@@ -64,6 +64,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { exportData } from "@/utils/exportUtils";
+import { ProjectCalendarView } from "@/components/ProjectCalendarView";
+import { ProjectTimelineView } from "@/components/ProjectTimelineView";
 
 const PROJECTS_STORAGE_KEY = 'mgt-projects-data';
 
@@ -909,29 +911,23 @@ export default function ProjectsPage() {
             </TabsContent>
 
             <TabsContent value="calendar" className="m-0">
-              <Card className="border-none">
+              <Card>
                 <CardContent className="p-6">
-                  <div className="text-center py-10">
-                    <Calendar className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Vue calendrier</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      La vue calendrier sera bientôt disponible
-                    </p>
-                  </div>
+                  <ProjectCalendarView 
+                    projects={filteredProjects}
+                    onViewProjectDetails={handleViewProjectDetails}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="timeline" className="m-0">
-              <Card className="border-none">
+              <Card>
                 <CardContent className="p-6">
-                  <div className="text-center py-10">
-                    <Clock className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Vue chronologique</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      La vue chronologique sera bientôt disponible
-                    </p>
-                  </div>
+                  <ProjectTimelineView 
+                    projects={filteredProjects}
+                    onViewProjectDetails={handleViewProjectDetails}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>

@@ -2,7 +2,7 @@
 import React from "react";
 import SidebarNav from "./SidebarNav";
 import { useTheme } from "@/hooks/use-theme";
-import { Moon, Sun } from "lucide-react";
+import ThemeSelector from "./ThemeSelector";
 import { Button } from "./ui/button";
 import { useAppSettings } from "@/hooks/use-app-settings";
 
@@ -12,12 +12,8 @@ interface LayoutProps {
 }
 
 const Layout = ({ children, title }: LayoutProps) => {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const { settings } = useAppSettings();
-  
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
 
   return (
     <div className="flex min-h-screen">
@@ -42,18 +38,7 @@ const Layout = ({ children, title }: LayoutProps) => {
           </div>
           <h1 className="text-xl font-bold hidden md:block">{title}</h1>
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
+            <ThemeSelector />
           </div>
         </header>
         <main className="flex-1 p-6 overflow-y-auto">

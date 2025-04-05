@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "purple" | "teal" | "midnight" | "sunset";
 
 interface ThemeContextType {
   theme: Theme;
@@ -14,9 +14,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     // Check if theme is stored in localStorage
     const storedTheme = window.localStorage.getItem("theme") as Theme;
-    if (storedTheme) return storedTheme;
+    if (storedTheme && ["light", "dark", "purple", "teal", "midnight", "sunset"].includes(storedTheme)) {
+      return storedTheme;
+    }
     
-    // Check system preference
+    // Check system preference for dark/light
     if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
       return "dark";
     }
@@ -25,8 +27,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
+    
+    // Remove all theme classes
+    root.classList.remove("light", "dark", "purple", "teal", "midnight", "sunset");
+    
+    // Add the current theme class
     root.classList.add(theme);
+    
+    // Store in localStorage
     window.localStorage.setItem("theme", theme);
   }, [theme]);
 

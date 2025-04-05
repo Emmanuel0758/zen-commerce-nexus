@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Plus, Calendar, KanbanSquare, ClipboardList, Clock, Users,
   ChevronDown, Search, Download, FileText, ArrowUpDown, MoreHorizontal,
@@ -64,6 +63,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { exportData } from "@/utils/exportUtils";
+
+// Clé de stockage localStorage
+const PROJECTS_STORAGE_KEY = 'mgt-projects-data';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
@@ -78,7 +81,8 @@ export default function ProjectsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [editMode, setEditMode] = useState(false);
   const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
-  const [projects, setProjects] = useState([
+  
+  const initialProjects = [
     {
       id: "PRJ-001",
       name: "Refonte du site web d'e-commerce",
@@ -175,8 +179,9 @@ export default function ProjectsPage() {
       budget: "15,000 €",
       client: "Interne"
     },
-  ]);
+  ];
   
+  const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -191,6 +196,23 @@ export default function ProjectsPage() {
     tasks: { total: 0, completed: 0 },
     progress: 0
   });
+
+  // Charger les projets depuis localStorage ou utiliser les projets par défaut
+  useEffect(() => {
+    const savedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
+    if (savedProjects) {
+      setProjects(JSON.parse(savedProjects));
+    } else {
+      setProjects(initialProjects);
+    }
+  }, []);
+
+  // Sauvegarder les projets dans localStorage à chaque modification
+  useEffect(() => {
+    if (projects.length > 0) {
+      localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    }
+  }, [projects]);
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -270,13 +292,6 @@ export default function ProjectsPage() {
       title: "Projet créé",
       description: `Le projet "${createdProject.name}" a été créé avec succès.`,
     });
-    
-    // Refresh the view to update the projects display
-    const currentView = view;
-    setView("list");
-    setTimeout(() => {
-      setView(currentView);
-    }, 100);
   };
 
   const handleViewProjectDetails = (project) => {
@@ -291,6 +306,11 @@ export default function ProjectsPage() {
       )
     );
     setSelectedProject(updatedProject);
+    
+    toast({
+      title: "Projet mis à jour",
+      description: `Le projet "${updatedProject.name}" a été mis à jour avec succès.`,
+    });
   };
 
   const handleDeleteProject = () => {
@@ -325,6 +345,26 @@ export default function ProjectsPage() {
       description: "Le projet a été marqué comme terminé avec succès.",
     });
   };
+  
+  const handleExportProjects = async (format) => {
+    try {
+      const success = await exportData(projects, format, "Projets");
+      if (!success) {
+        toast({
+          title: "Erreur d'exportation",
+          description: `Une erreur est survenue lors de l'exportation au format ${format.toUpperCase()}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'exportation:", error);
+      toast({
+        title: "Erreur d'exportation",
+        description: "Une erreur inattendue est survenue",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <Layout title="Projets">
@@ -352,26 +392,22 @@ export default function ProjectsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem 
-                  onClick={() => {
-                    toast({
-                      title: "Export en PDF",
-                      description: "L'export en PDF a démarré, veuillez patienter...",
-                    });
-                  }}
+                  onClick={() => handleExportProjects("pdf")}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Exporter en PDF
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    toast({
-                      title: "Export en CSV",
-                      description: "L'export en CSV a démarré, veuillez patienter...",
-                    });
-                  }}
+                  onClick={() => handleExportProjects("excel")}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Exporter en CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleExportProjects("json")}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exporter en JSON
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -50,7 +50,7 @@ export function ProjectContextMenu({
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger>{children}</ContextMenuTrigger>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-64">
         <ContextMenuItem onClick={onView}>
           <Eye className="mr-2 h-4 w-4" />

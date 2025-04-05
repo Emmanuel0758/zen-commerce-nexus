@@ -3,7 +3,10 @@ import { useState } from "react";
 import Layout from "@/components/Layout";
 import { AIAssistant } from "@/components/AIAssistant";
 import { Card } from "@/components/ui/card";
-import { Bot, MessageSquareText, QrCode, FileText, Palette, ImageIcon, Lightbulb } from "lucide-react";
+import { 
+  Bot, MessageSquareText, QrCode, FileText, Palette, ImageIcon, Lightbulb,
+  Code, Globe, Calculator, CalendarIcon, MapPin, Braces, Sparkles
+} from "lucide-react";
 
 export default function AIAssistantPage() {
   return (
@@ -12,10 +15,10 @@ export default function AIAssistantPage() {
         <header className="mb-6">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Bot className="h-8 w-8 text-primary" />
-            Assistant IA Multifonction
+            Assistant IA Multifonction Premium
           </h1>
           <p className="text-muted-foreground">
-            Exploitez la puissance de l'IA pour générer des QR codes, des textes, des palettes de couleurs et des images
+            Exploitez la puissance de l'IA pour simplifier votre travail quotidien avec nos outils intelligents
           </p>
         </header>
 
@@ -48,7 +51,7 @@ export default function AIAssistantPage() {
               
             <Card className="p-4 bg-muted/50">
               <h3 className="font-medium flex items-center gap-2 mb-3">
-                <Lightbulb className="h-5 w-5 text-primary" />
+                <Sparkles className="h-5 w-5 text-primary" />
                 Fonctionnalités disponibles
               </h3>
               <div className="space-y-4">
@@ -81,6 +84,46 @@ export default function AIAssistantPage() {
                   <div>
                     <p className="text-sm font-medium">Images</p>
                     <p className="text-xs text-muted-foreground">Générez des images basées sur vos descriptions</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Code className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Code</p>
+                    <p className="text-xs text-muted-foreground">Obtenez des snippets de code dans différents langages</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Globe className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Traduction</p>
+                    <p className="text-xs text-muted-foreground">Traduisez vos textes dans plusieurs langues</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Calculator className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Calculs</p>
+                    <p className="text-xs text-muted-foreground">Résolvez des problèmes mathématiques complexes</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <CalendarIcon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Planning</p>
+                    <p className="text-xs text-muted-foreground">Générez des suggestions de planning pour vos activités</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Lieux</p>
+                    <p className="text-xs text-muted-foreground">Trouvez des informations sur des lieux et adresses</p>
                   </div>
                 </div>
               </div>

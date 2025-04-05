@@ -38,7 +38,6 @@ import { Download, FileDown } from "lucide-react";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { useAppSettings } from "@/hooks/use-app-settings";
-// Import the type extensions
 import "@/types/jspdf-extensions";
 
 type Order = {

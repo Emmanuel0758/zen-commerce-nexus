@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,7 +71,7 @@ export function ProductInventoryCard() {
   });
 
   const getExportData = () => {
-    const localizedProducts = filteredProducts.map(product => {
+    return filteredProducts.map(product => {
       const statusTranslation = settings.language === 'fr'
         ? product.status === "instock" ? "En stock" : product.status === "lowstock" ? "Stock faible" : "Rupture de stock"
         : product.status === "instock" ? "In stock" : product.status === "lowstock" ? "Low stock" : "Out of stock";
@@ -82,8 +81,6 @@ export function ProductInventoryCard() {
         localizedStatus: statusTranslation
       };
     });
-    
-    return localizedProducts;
   };
 
   const exportFileName = settings.language === 'fr' ? 'inventaire-produits' : 'product-inventory';
@@ -95,18 +92,18 @@ export function ProductInventoryCard() {
         description: "Préparation du fichier..."
       });
       
-      const exportData = getExportData();
+      const exportDataItems = getExportData();
       const metadata = {
         title: settings.language === 'fr' ? "Inventaire produits" : "Product inventory",
         exportDate: new Date().toISOString(),
-        totalItems: exportData.length,
+        totalItems: exportDataItems.length,
         appName: settings.appName
       };
       
       const success = await exportData(
         format, 
         exportFileName, 
-        exportData, 
+        exportDataItems, 
         metadata
       );
       

@@ -35,6 +35,18 @@ export const exportData = async (
 };
 
 /**
+ * Wrapper function for exportData for simpler use
+ */
+export const handleExport = async (
+  data: any[],
+  format: "json" | "pdf" | "excel",
+  fileName: string,
+  metadata?: Record<string, any>
+): Promise<boolean> => {
+  return await exportData(format, fileName, data, metadata);
+};
+
+/**
  * Exports data as JSON
  */
 const exportJson = (

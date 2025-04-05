@@ -11,9 +11,9 @@ import 'jspdf-autotable';
  * @returns Promise resolving to true if export was successful
  */
 export const exportData = async (
+  data: any[],
   format: "json" | "pdf" | "excel",
   fileName: string,
-  data: any[],
   metadata?: Record<string, any>
 ): Promise<boolean> => {
   try {
@@ -43,7 +43,7 @@ export const handleExport = async (
   fileName: string,
   metadata?: Record<string, any>
 ): Promise<boolean> => {
-  return await exportData(format, fileName, data, metadata);
+  return await exportData(data, format, fileName, metadata);
 };
 
 /**

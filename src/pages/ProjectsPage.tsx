@@ -65,7 +65,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { exportData } from "@/utils/exportUtils";
 
-// Clé de stockage localStorage
 const PROJECTS_STORAGE_KEY = 'mgt-projects-data';
 
 export default function ProjectsPage() {
@@ -199,7 +198,6 @@ export default function ProjectsPage() {
     progress: 0
   });
 
-  // Charger les projets depuis localStorage ou utiliser les projets par défaut
   useEffect(() => {
     const savedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
     if (savedProjects) {
@@ -216,7 +214,6 @@ export default function ProjectsPage() {
     }
   }, []);
 
-  // Sauvegarder les projets dans localStorage à chaque modification
   useEffect(() => {
     if (projects.length > 0) {
       localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
@@ -283,7 +280,6 @@ export default function ProjectsPage() {
         startDate: new Date().toISOString().split("T")[0],
       };
 
-      // Petit délai pour simuler le traitement
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setProjects((prevProjects) => [...prevProjects, createdProject]);
@@ -370,8 +366,8 @@ export default function ProjectsPage() {
       description: "Le projet a été marqué comme terminé avec succès.",
     });
   };
-  
-  const handleExportProjects = async (format) => {
+
+  const handleExportProjects = async (format: "json" | "pdf" | "excel") => {
     setIsExporting(true);
     try {
       const success = await exportData(projects, format, "Projets");

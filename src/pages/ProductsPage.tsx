@@ -323,23 +323,22 @@ export default function ProductsPage() {
         return;
       }
       
-      const dataToExport = {
-        metadata: {
-          title: "Catalogue des produits Zen",
-          exportDate: new Date().toISOString(),
-          totalProducts: products.length,
-          inStock: inStockCount,
-          lowStock: lowStockCount,
-          outOfStock: outOfStockCount
-        },
-        products: products.map(product => ({
-          ...product,
-          statusText: product.status === "instock" ? "En stock" : 
-                      product.status === "lowstock" ? "Stock faible" : "Rupture de stock"
-        }))
+      const productsForExport = products.map(product => ({
+        ...product,
+        statusText: product.status === "instock" ? "En stock" : 
+                  product.status === "lowstock" ? "Stock faible" : "Rupture de stock"
+      }));
+      
+      const metadata = {
+        title: "Catalogue des produits Zen",
+        exportDate: new Date().toISOString(),
+        totalProducts: products.length,
+        inStock: inStockCount,
+        lowStock: lowStockCount,
+        outOfStock: outOfStockCount
       };
       
-      const success = await exportData(dataToExport, format, "zen-products");
+      const success = await exportData(productsForExport, format, "zen-products", metadata);
       
       if (success) {
         toast({

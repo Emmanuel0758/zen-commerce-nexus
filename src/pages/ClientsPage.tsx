@@ -369,7 +369,7 @@ export default function ClientsPage() {
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="active">Actifs</SelectItem>
                   <SelectItem value="inactive">Inactifs</SelectItem>
                 </SelectContent>

@@ -34,13 +34,15 @@ const ThemeOption = ({ value, label, icon, onClick, active }: ThemeOptionProps) 
   );
 };
 
-export function ThemeSelector() {
+export function ThemeSelector({ variant = "ghost", floating = false }: { variant?: "ghost" | "outline"; floating?: boolean }) {
   const { theme, setTheme } = useTheme();
+  
+  const floatingClass = floating ? "fixed bottom-4 left-4 z-50 shadow-lg rounded-full" : "";
   
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Change theme">
+        <Button variant={variant} size="icon" aria-label="Change theme" className={floatingClass}>
           {theme === "light" && <Sun className="h-[1.2rem] w-[1.2rem]" />}
           {theme === "dark" && <Moon className="h-[1.2rem] w-[1.2rem]" />}
           {theme === "purple" && <Palette className="h-[1.2rem] w-[1.2rem]" />}

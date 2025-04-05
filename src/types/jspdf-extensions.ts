@@ -1,14 +1,14 @@
 
 import { jsPDF } from "jspdf";
-import PubSub from "pubsub-js";
+import { PubSub } from "pubsub-js";
 
-// Étendre l'interface jsPDF pour inclure les fonctionnalités autoTable
 declare module "jspdf" {
   interface jsPDF {
-    autoTable: any;
-    lastAutoTable: {
-      finalY: number;
-    };
+    autoTable: (options: any) => jsPDF;
+    setFontSize: (size: number) => jsPDF;
+    setTextColor: (r: number, g: number, b: number) => jsPDF;
+    text: (text: string, x: number, y: number, options?: any) => jsPDF;
+    addImage: (imageData: string, format: string, x: number, y: number, width: number, height: number) => jsPDF;
     internal: {
       events: PubSub;
       scaleFactor: number;
@@ -24,3 +24,5 @@ declare module "jspdf" {
     };
   }
 }
+
+export {};

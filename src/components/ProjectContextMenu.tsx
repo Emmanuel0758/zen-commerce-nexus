@@ -8,7 +8,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Pencil, Share, Plus, Trash2 } from "lucide-react";
+import { Eye, Pencil, Share, Plus, Trash2, Download } from "lucide-react";
 
 interface ProjectContextMenuProps {
   children: React.ReactNode;

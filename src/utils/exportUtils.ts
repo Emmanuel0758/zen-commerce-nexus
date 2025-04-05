@@ -4,9 +4,9 @@ import 'jspdf-autotable';
 
 /**
  * Exports data in different formats
+ * @param data The data to export
  * @param format The format to export (json, pdf, excel)
  * @param fileName The name of the file without extension
- * @param data The data to export
  * @param metadata Optional metadata about the export
  * @returns Promise resolving to true if export was successful
  */

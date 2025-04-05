@@ -37,6 +37,7 @@ const ThemeOption = ({ value, label, icon, onClick, active }: ThemeOptionProps) 
 export function ThemeSelector({ variant = "ghost", floating = false }: { variant?: "ghost" | "outline"; floating?: boolean }) {
   const { theme, setTheme } = useTheme();
   
+  // Mise à jour de la classe pour positionner le bouton en bas à gauche pour tous les appareils
   const floatingClass = floating ? "fixed bottom-4 left-4 z-50 shadow-lg rounded-full" : "";
   
   return (

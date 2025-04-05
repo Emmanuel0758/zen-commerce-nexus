@@ -49,8 +49,8 @@ const Layout = ({ children, title }: LayoutProps) => {
         </main>
       </div>
       
-      {/* Floating theme selector that's always visible */}
-      <div className="md:hidden">
+      {/* Floating theme selector that's always visible for all screen sizes */}
+      <div>
         <ThemeSelector floating={true} variant="outline" />
       </div>
     </div>

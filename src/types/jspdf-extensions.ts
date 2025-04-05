@@ -1,10 +1,11 @@
 
+import { jsPDF } from "jspdf";
+import { PubSub } from "@/types";
+
 declare module "jspdf" {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable: any;
-    setFontSize: (size: number) => jsPDF;
-    setFont: (fontName: string, fontStyle?: string, fontWeight?: string | number) => jsPDF;
+    // Add extensions to jsPDF type
+    autoTable: any;
     setTextColor: (ch1: string | number, ch2?: number, ch3?: number, ch4?: number) => jsPDF;
     internal: {
       events: any;

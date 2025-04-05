@@ -151,7 +151,7 @@ export function ProjectTeamDialog({
                   <SelectValue placeholder="Tous les rôles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les rôles</SelectItem>
+                  <SelectItem value="all">Tous les rôles</SelectItem>
                   <SelectItem value="Chef de projet">Chef de projet</SelectItem>
                   <SelectItem value="Développeur Frontend">
                     Développeur Frontend

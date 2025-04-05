@@ -191,18 +191,16 @@ export default function ProjectsPage() {
     progress: 0
   });
 
-  // Fonction pour filtrer les projets
   const filteredProjects = projects.filter((project) => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "" || project.status === statusFilter;
-    const matchesType = typeFilter === "" || project.type === typeFilter;
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
+    const matchesType = typeFilter === "all" || project.type === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Fonction pour obtenir la couleur du badge de statut
   const getStatusColor = (status) => {
     switch (status) {
       case "En cours":
@@ -218,7 +216,6 @@ export default function ProjectsPage() {
     }
   };
 
-  // Fonction pour obtenir la couleur du badge de priorité
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "Critique":
@@ -234,7 +231,6 @@ export default function ProjectsPage() {
     }
   };
 
-  // Fonction pour créer un nouveau projet
   const handleCreateProject = () => {
     if (!newProject.name || !newProject.deadline) {
       toast({
@@ -275,13 +271,11 @@ export default function ProjectsPage() {
     });
   };
 
-  // Fonction pour ouvrir les détails d'un projet
   const handleViewProjectDetails = (project) => {
     setSelectedProject(project);
     setDetailsOpen(true);
   };
 
-  // Fonction pour mettre à jour un projet
   const handleUpdateProject = (updatedProject) => {
     setProjects(
       projects.map((proj) => 
@@ -291,7 +285,6 @@ export default function ProjectsPage() {
     setSelectedProject(updatedProject);
   };
 
-  // Fonction pour supprimer un projet
   const handleDeleteProject = () => {
     if (!projectToDelete) return;
     
@@ -305,13 +298,11 @@ export default function ProjectsPage() {
     });
   };
 
-  // Fonction pour confirmer la suppression d'un projet
   const confirmDeleteProject = (project) => {
     setProjectToDelete(project);
     setDeleteAlertOpen(true);
   };
 
-  // Fonction pour marquer un projet comme terminé
   const markProjectAsCompleted = (projectId) => {
     setProjects(
       projects.map((proj) => 
@@ -488,7 +479,7 @@ export default function ProjectsPage() {
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="En cours">En cours</SelectItem>
                   <SelectItem value="Planifié">Planifié</SelectItem>
                   <SelectItem value="Terminé">Terminé</SelectItem>
@@ -500,7 +491,7 @@ export default function ProjectsPage() {
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les types</SelectItem>
+                  <SelectItem value="all">Tous les types</SelectItem>
                   <SelectItem value="Agile">Agile</SelectItem>
                   <SelectItem value="Cycle en V">Cycle en V</SelectItem>
                   <SelectItem value="Kanban">Kanban</SelectItem>
@@ -875,7 +866,6 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Dialogue de création de projet */}
       <Dialog open={newProjectDialogOpen} onOpenChange={setNewProjectDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -999,7 +989,6 @@ export default function ProjectsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Feuillet de détails du projet */}
       {selectedProject && (
         <ProjectDetailsSheet
           open={detailsOpen}
@@ -1009,7 +998,6 @@ export default function ProjectsPage() {
         />
       )}
 
-      {/* Alerte de confirmation de suppression */}
       <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -62,11 +61,9 @@ export function LatestOrdersCard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const filteredOrders = demoOrders.filter(order => {
-    // Appliquer recherche par texte
     const matchesSearch = order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Appliquer filtre par statut
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
     return matchesSearch && matchesStatus;

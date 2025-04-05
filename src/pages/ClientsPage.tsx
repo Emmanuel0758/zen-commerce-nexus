@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -141,20 +140,16 @@ export default function ClientsPage() {
   const [currentClient, setCurrentClient] = useState<Client | null>(null);
   const [editFormData, setEditFormData] = useState<Client | null>(null);
 
-  // Filtrer les clients
   const filteredClients = clients.filter(client => {
-    // Appliquer recherche par texte
     const matchesSearch = 
       client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.id.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Appliquer filtre par statut
     const matchesStatus = statusFilter === "all" || client.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   }).sort((a, b) => {
-    // Appliquer tri
     switch (sortOption) {
       case "name_asc":
         return a.name.localeCompare(b.name);
@@ -170,7 +165,6 @@ export default function ClientsPage() {
         return parseFloat(a.totalSpent.replace(/[^\d]/g, '')) - parseFloat(b.totalSpent.replace(/[^\d]/g, ''));
       case "newest":
       default:
-        // Par défaut, trier par ID (proxy pour la date d'inscription) décroissant
         return parseInt(b.id.substring(1)) - parseInt(a.id.substring(1));
     }
   });
@@ -189,7 +183,6 @@ export default function ClientsPage() {
   const handleSaveEdit = () => {
     if (!editFormData) return;
     
-    // Mettre à jour le client
     const updatedClients = clients.map(c => 
       c.id === editFormData.id ? editFormData : c
     );
@@ -211,7 +204,6 @@ export default function ClientsPage() {
   const handleConfirmDelete = () => {
     if (!currentClient) return;
     
-    // Supprimer le client
     const updatedClients = clients.filter(c => c.id !== currentClient.id);
     setClients(updatedClients);
     setIsDeleteDialogOpen(false);
@@ -223,7 +215,6 @@ export default function ClientsPage() {
   };
 
   const handleAddClient = () => {
-    // Exemple simple de données pour un nouveau client
     const newClient: Client = {
       id: `C${1051 + clients.length}`,
       name: "Nouveau Client",
@@ -256,7 +247,6 @@ export default function ClientsPage() {
       downloadAnchorNode.remove();
     } 
     else if (format === "pdf") {
-      // Simulation d'export PDF
       setTimeout(() => {
         toast({
           title: "Export PDF en cours",
@@ -272,7 +262,6 @@ export default function ClientsPage() {
       }, 500);
     } 
     else if (format === "excel") {
-      // Simulation d'export Excel
       let csvContent = "ID,Nom,Email,Téléphone,Ville,Commandes,Total Dépensé,Dernière Commande,Statut\n";
       
       clients.forEach(client => {
@@ -485,7 +474,6 @@ export default function ClientsPage() {
         </Card>
       </div>
 
-      {/* Dialogue Voir Client */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -563,7 +551,6 @@ export default function ClientsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogue Modifier Client */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -649,7 +636,6 @@ export default function ClientsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogue Supprimer Client */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -675,7 +661,6 @@ export default function ClientsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogue Ajouter Client */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>

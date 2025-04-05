@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { 
-  Plus, Filter, Calendar, KanbanSquare, ClipboardList, Clock, Users,
+  Plus, Calendar, KanbanSquare, ClipboardList, Clock, Users,
   ChevronDown, Search, Download, FileText, ArrowUpDown, MoreHorizontal,
   Trash, Pencil, Check, Filter, Eye, Share
 } from "lucide-react";
@@ -76,6 +75,8 @@ export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [editMode, setEditMode] = useState(false);
+  const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
   const [projects, setProjects] = useState([
     {
       id: "PRJ-001",

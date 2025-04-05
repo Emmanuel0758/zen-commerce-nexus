@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import {
   Card,
@@ -6,6 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Tabs,
@@ -24,11 +25,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useAppSettings } from "@/hooks/use-app-settings";
+import { Loader2, Save, Upload, Download, RefreshCw, AlertTriangle, FileDown, Settings2, Shield, Eye, FileText } from "lucide-react";
+import { exportData } from "@/utils/exportUtils";
 
 const SettingsPage = () => {
-  const { settings, updateSettings } = useAppSettings();
+  const { settings, updateSettings, resetSettings } = useAppSettings();
   
   const [formState, setFormState] = useState({
     appName: settings.appName,
@@ -38,10 +43,64 @@ const SettingsPage = () => {
     emailTemplates: settings.emailTemplates,
     analyticsEnabled: settings.analyticsEnabled,
     language: settings.language,
+    companyAddress: '',
+    companyCity: '',
+    companyCountry: 'Côte d\'Ivoire',
+    companyEmail: '',
+    companyPhone: '',
+    companyWebsite: '',
+    companyTaxId: '',
+    exportFooter: '',
+    dateFormat: 'DD/MM/YYYY',
+    timeFormat: '24h',
+    timezone: 'Africa/Abidjan',
+    defaultCurrency: settings.currency,
+    invoicePrefix: 'INV-',
+    invoiceSuffix: '',
+    orderPrefix: 'ORD-',
+    orderSuffix: '',
+    quotePrefix: 'QUO-',
+    quoteSuffix: '',
+    receiptPrefix: 'REC-',
+    receiptSuffix: '',
+    pdfOrientation: 'portrait',
+    pdfPageSize: 'a4',
+    pdaMarginTop: '15',
+    pdfMarginRight: '15',
+    pdfMarginBottom: '15',
+    pdfMarginLeft: '15',
+    notificationSound: true,
+    desktopNotifications: true,
+    emailNotifications: true,
+    autoSave: true,
+    backupFrequency: 'daily',
+    dataRetentionPeriod: '1year',
+    defaultLanguage: settings.language,
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(settings.logo);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"json" | "pdf" | "excel">("json");
+
+  // Load company information from localStorage if available
+  useEffect(() => {
+    const companyInfo = localStorage.getItem('companyInfo');
+    if (companyInfo) {
+      try {
+        const parsedInfo = JSON.parse(companyInfo);
+        setFormState(prev => ({
+          ...prev,
+          ...parsedInfo
+        }));
+      } catch (error) {
+        console.error('Failed to parse company info:', error);
+      }
+    }
+  }, []);
 
   // Handle file selection for logo
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +115,7 @@ const SettingsPage = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
@@ -69,16 +128,169 @@ const SettingsPage = () => {
     setFormState((prev) => ({ ...prev, [name]: checked }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
-      ...formState,
-      logo: logoPreview,
-    });
-    toast({
-      title: "Paramètres mis à jour",
-      description: "Les modifications ont été enregistrées avec succès.",
-    });
+    setIsLoading(true);
+    
+    try {
+      // Save app settings
+      updateSettings({
+        ...formState,
+        logo: logoPreview,
+      });
+      
+      // Save company information separately
+      const companyInfo = {
+        companyAddress: formState.companyAddress,
+        companyCity: formState.companyCity,
+        companyCountry: formState.companyCountry,
+        companyEmail: formState.companyEmail,
+        companyPhone: formState.companyPhone,
+        companyWebsite: formState.companyWebsite,
+        companyTaxId: formState.companyTaxId,
+        exportFooter: formState.exportFooter,
+        dateFormat: formState.dateFormat,
+        timeFormat: formState.timeFormat,
+        timezone: formState.timezone,
+        defaultCurrency: formState.defaultCurrency,
+        invoicePrefix: formState.invoicePrefix,
+        invoiceSuffix: formState.invoiceSuffix,
+        orderPrefix: formState.orderPrefix,
+        orderSuffix: formState.orderSuffix,
+        quotePrefix: formState.quotePrefix,
+        quoteSuffix: formState.quoteSuffix,
+        receiptPrefix: formState.receiptPrefix,
+        receiptSuffix: formState.receiptSuffix,
+        pdfOrientation: formState.pdfOrientation,
+        pdfPageSize: formState.pdfPageSize,
+        pdaMarginTop: formState.pdaMarginTop,
+        pdfMarginRight: formState.pdfMarginRight,
+        pdfMarginBottom: formState.pdfMarginBottom,
+        pdfMarginLeft: formState.pdfMarginLeft,
+      };
+      
+      localStorage.setItem('companyInfo', JSON.stringify(companyInfo));
+      
+      toast({
+        title: "Paramètres mis à jour",
+        description: "Les modifications ont été enregistrées avec succès.",
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'enregistrement des paramètres.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetSettings = () => {
+    setIsRestoring(true);
+    
+    try {
+      resetSettings();
+      localStorage.removeItem('companyInfo');
+      
+      setFormState({
+        appName: 'Zen Commerce',
+        logo: null,
+        currency: 'XOF',
+        theme: 'system',
+        emailTemplates: 'default',
+        analyticsEnabled: true,
+        language: 'fr',
+        companyAddress: '',
+        companyCity: '',
+        companyCountry: 'Côte d\'Ivoire',
+        companyEmail: '',
+        companyPhone: '',
+        companyWebsite: '',
+        companyTaxId: '',
+        exportFooter: '',
+        dateFormat: 'DD/MM/YYYY',
+        timeFormat: '24h',
+        timezone: 'Africa/Abidjan',
+        defaultCurrency: 'XOF',
+        invoicePrefix: 'INV-',
+        invoiceSuffix: '',
+        orderPrefix: 'ORD-',
+        orderSuffix: '',
+        quotePrefix: 'QUO-',
+        quoteSuffix: '',
+        receiptPrefix: 'REC-',
+        receiptSuffix: '',
+        pdfOrientation: 'portrait',
+        pdfPageSize: 'a4',
+        pdaMarginTop: '15',
+        pdfMarginRight: '15',
+        pdfMarginBottom: '15',
+        pdfMarginLeft: '15',
+        notificationSound: true,
+        desktopNotifications: true,
+        emailNotifications: true,
+        autoSave: true,
+        backupFrequency: 'daily',
+        dataRetentionPeriod: '1year',
+        defaultLanguage: 'fr',
+      });
+      
+      setLogoPreview(null);
+      setLogoFile(null);
+      
+      toast({
+        title: "Paramètres réinitialisés",
+        description: "Tous les paramètres ont été réinitialisés aux valeurs par défaut.",
+      });
+    } catch (error) {
+      console.error('Error resetting settings:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la réinitialisation des paramètres.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRestoring(false);
+      setShowResetConfirm(false);
+    }
+  };
+
+  const handleExportSettings = async () => {
+    setIsExporting(true);
+    
+    try {
+      const settingsData = [
+        {
+          ...settings,
+          ...formState,
+          logo: 'Données binaires non incluses'
+        }
+      ];
+      
+      const metadata = {
+        title: 'Configuration de l\'application',
+        exportDate: new Date().toISOString(),
+        version: '1.0.0'
+      };
+      
+      await exportData(settingsData, exportFormat, "zen-settings", metadata);
+      
+      toast({
+        title: "Paramètres exportés",
+        description: `Les paramètres ont été exportés avec succès au format ${exportFormat.toUpperCase()}.`,
+      });
+    } catch (error) {
+      console.error('Error exporting settings:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'exportation des paramètres.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const downloadFile = (filename: string, content: string = "Sample content") => {
@@ -99,13 +311,19 @@ const SettingsPage = () => {
   return (
     <Layout title="Paramètres">
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 h-auto gap-4">
+        <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-auto gap-4">
           <TabsTrigger value="general">Général</TabsTrigger>
+          <TabsTrigger value="company">Entreprise</TabsTrigger>
           <TabsTrigger value="appearance">Apparence</TabsTrigger>
           <TabsTrigger value="currency">Devise & Paiement</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Sécurité</TabsTrigger>
           <TabsTrigger value="advanced">Avancé</TabsTrigger>
+          <TabsTrigger value="export">Export & Backup</TabsTrigger>
+          <TabsTrigger value="integration">Intégrations</TabsTrigger>
+          <TabsTrigger value="api">API</TabsTrigger>
+          <TabsTrigger value="about">À propos</TabsTrigger>
         </TabsList>
 
         {/* Onglet Général */}
@@ -131,7 +349,7 @@ const SettingsPage = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="language">Langue</Label>
+                  <Label htmlFor="language">Langue par défaut</Label>
                   <Select
                     value={formState.language}
                     onValueChange={(value) => handleSelectChange("language", value)}
@@ -142,6 +360,58 @@ const SettingsPage = () => {
                     <SelectContent>
                       <SelectItem value="fr">Français</SelectItem>
                       <SelectItem value="en">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dateFormat">Format de date</Label>
+                  <Select
+                    value={formState.dateFormat}
+                    onValueChange={(value) => handleSelectChange("dateFormat", value)}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez un format de date" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                      <SelectItem value="DD-MM-YYYY">DD-MM-YYYY</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timeFormat">Format de l'heure</Label>
+                  <Select
+                    value={formState.timeFormat}
+                    onValueChange={(value) => handleSelectChange("timeFormat", value)}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez un format d'heure" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24h">24 heures (14:30)</SelectItem>
+                      <SelectItem value="12h">12 heures (2:30 PM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timezone">Fuseau horaire</Label>
+                  <Select
+                    value={formState.timezone}
+                    onValueChange={(value) => handleSelectChange("timezone", value)}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez un fuseau horaire" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Africa/Abidjan">Africa/Abidjan (UTC+0)</SelectItem>
+                      <SelectItem value="Europe/Paris">Europe/Paris (UTC+1)</SelectItem>
+                      <SelectItem value="America/New_York">America/New_York (UTC-5)</SelectItem>
+                      <SelectItem value="Asia/Tokyo">Asia/Tokyo (UTC+9)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -180,7 +450,162 @@ const SettingsPage = () => {
                   </div>
                 </div>
 
-                <Button type="submit">Enregistrer les modifications</Button>
+                <div className="flex items-center justify-between pt-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="autoSave"
+                      checked={formState.autoSave}
+                      onCheckedChange={(checked) => handleSwitchChange("autoSave", checked)}
+                    />
+                    <Label htmlFor="autoSave">Enregistrement automatique</Label>
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={isLoading} className="mt-4">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer les modifications
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Entreprise */}
+        <TabsContent value="company">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations de l'entreprise</CardTitle>
+              <CardDescription>
+                Ces informations seront utilisées dans les documents et rapports générés.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="companyAddress">Adresse</Label>
+                    <Input
+                      id="companyAddress"
+                      name="companyAddress"
+                      value={formState.companyAddress}
+                      onChange={handleInputChange}
+                      placeholder="123 Avenue de Commerce"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="companyCity">Ville</Label>
+                    <Input
+                      id="companyCity"
+                      name="companyCity"
+                      value={formState.companyCity}
+                      onChange={handleInputChange}
+                      placeholder="Abidjan"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="companyCountry">Pays</Label>
+                    <Select
+                      value={formState.companyCountry}
+                      onValueChange={(value) => handleSelectChange("companyCountry", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un pays" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Côte d'Ivoire">Côte d'Ivoire</SelectItem>
+                        <SelectItem value="Sénégal">Sénégal</SelectItem>
+                        <SelectItem value="Cameroun">Cameroun</SelectItem>
+                        <SelectItem value="Mali">Mali</SelectItem>
+                        <SelectItem value="Burkina Faso">Burkina Faso</SelectItem>
+                        <SelectItem value="Niger">Niger</SelectItem>
+                        <SelectItem value="Togo">Togo</SelectItem>
+                        <SelectItem value="Bénin">Bénin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="companyEmail">Email</Label>
+                    <Input
+                      id="companyEmail"
+                      name="companyEmail"
+                      type="email"
+                      value={formState.companyEmail}
+                      onChange={handleInputChange}
+                      placeholder="contact@example.com"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="companyPhone">Téléphone</Label>
+                    <Input
+                      id="companyPhone"
+                      name="companyPhone"
+                      value={formState.companyPhone}
+                      onChange={handleInputChange}
+                      placeholder="+225 XX XX XX XX XX"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="companyWebsite">Site web</Label>
+                    <Input
+                      id="companyWebsite"
+                      name="companyWebsite"
+                      value={formState.companyWebsite}
+                      onChange={handleInputChange}
+                      placeholder="www.example.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="companyTaxId">Numéro d'identification fiscale</Label>
+                    <Input
+                      id="companyTaxId"
+                      name="companyTaxId"
+                      value={formState.companyTaxId}
+                      onChange={handleInputChange}
+                      placeholder="XXX-XXX-XXX"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="exportFooter">Pied de page pour documents exportés</Label>
+                  <Textarea
+                    id="exportFooter"
+                    name="exportFooter"
+                    value={formState.exportFooter}
+                    onChange={handleInputChange}
+                    placeholder="Merci pour votre confiance"
+                    rows={3}
+                  />
+                </div>
+
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer les informations
+                    </>
+                  )}
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -235,12 +660,25 @@ const SettingsPage = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Button type="submit">Enregistrer les modifications</Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Enregistrer les modifications
+                      </>
+                    )}
+                  </Button>
                   <Button 
                     type="button" 
                     variant="outline"
                     onClick={() => downloadFile("email-templates.html", "<html><body><h1>Template d'email</h1><p>Contenu du template</p></body></html>")}
                   >
+                    <Download className="mr-2 h-4 w-4" />
                     Télécharger les templates
                   </Button>
                 </div>
@@ -261,11 +699,11 @@ const SettingsPage = () => {
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="currency">Devise</Label>
+                  <Label htmlFor="currency">Devise par défaut</Label>
                   <Select
-                    value={formState.currency}
+                    value={formState.defaultCurrency}
                     onValueChange={(value) =>
-                      handleSelectChange("currency", value)
+                      handleSelectChange("defaultCurrency", value)
                     }
                   >
                     <SelectTrigger className="w-full max-w-sm">
@@ -304,7 +742,229 @@ const SettingsPage = () => {
                   </div>
                 </div>
 
-                <Button type="submit">Enregistrer les modifications</Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer les modifications
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Documents */}
+        <TabsContent value="documents">
+          <Card>
+            <CardHeader>
+              <CardTitle>Paramètres des documents</CardTitle>
+              <CardDescription>
+                Configurez l'apparence et le comportement des documents exportés
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="invoicePrefix">Préfixe des factures</Label>
+                    <Input
+                      id="invoicePrefix"
+                      name="invoicePrefix"
+                      value={formState.invoicePrefix}
+                      onChange={handleInputChange}
+                      placeholder="INV-"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="invoiceSuffix">Suffixe des factures</Label>
+                    <Input
+                      id="invoiceSuffix"
+                      name="invoiceSuffix"
+                      value={formState.invoiceSuffix}
+                      onChange={handleInputChange}
+                      placeholder="-2025"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="orderPrefix">Préfixe des commandes</Label>
+                    <Input
+                      id="orderPrefix"
+                      name="orderPrefix"
+                      value={formState.orderPrefix}
+                      onChange={handleInputChange}
+                      placeholder="ORD-"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="orderSuffix">Suffixe des commandes</Label>
+                    <Input
+                      id="orderSuffix"
+                      name="orderSuffix"
+                      value={formState.orderSuffix}
+                      onChange={handleInputChange}
+                      placeholder=""
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="quotePrefix">Préfixe des devis</Label>
+                    <Input
+                      id="quotePrefix"
+                      name="quotePrefix"
+                      value={formState.quotePrefix}
+                      onChange={handleInputChange}
+                      placeholder="QUO-"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="quoteSuffix">Suffixe des devis</Label>
+                    <Input
+                      id="quoteSuffix"
+                      name="quoteSuffix"
+                      value={formState.quoteSuffix}
+                      onChange={handleInputChange}
+                      placeholder=""
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="receiptPrefix">Préfixe des reçus</Label>
+                    <Input
+                      id="receiptPrefix"
+                      name="receiptPrefix"
+                      value={formState.receiptPrefix}
+                      onChange={handleInputChange}
+                      placeholder="REC-"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="receiptSuffix">Suffixe des reçus</Label>
+                    <Input
+                      id="receiptSuffix"
+                      name="receiptSuffix"
+                      value={formState.receiptSuffix}
+                      onChange={handleInputChange}
+                      placeholder=""
+                    />
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="pdfOrientation">Orientation des PDF</Label>
+                    <Select
+                      value={formState.pdfOrientation}
+                      onValueChange={(value) => handleSelectChange("pdfOrientation", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez une orientation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="portrait">Portrait</SelectItem>
+                        <SelectItem value="landscape">Paysage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="pdfPageSize">Taille des pages PDF</Label>
+                    <Select
+                      value={formState.pdfPageSize}
+                      onValueChange={(value) => handleSelectChange("pdfPageSize", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez un format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="a4">A4</SelectItem>
+                        <SelectItem value="letter">Letter</SelectItem>
+                        <SelectItem value="legal">Legal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="pdaMarginTop">Marge haut (mm)</Label>
+                    <Input
+                      id="pdaMarginTop"
+                      name="pdaMarginTop"
+                      type="number"
+                      value={formState.pdaMarginTop}
+                      onChange={handleInputChange}
+                      min="0"
+                      max="50"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="pdfMarginRight">Marge droite (mm)</Label>
+                    <Input
+                      id="pdfMarginRight"
+                      name="pdfMarginRight"
+                      type="number"
+                      value={formState.pdfMarginRight}
+                      onChange={handleInputChange}
+                      min="0"
+                      max="50"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="pdfMarginBottom">Marge bas (mm)</Label>
+                    <Input
+                      id="pdfMarginBottom"
+                      name="pdfMarginBottom"
+                      type="number"
+                      value={formState.pdfMarginBottom}
+                      onChange={handleInputChange}
+                      min="0"
+                      max="50"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="pdfMarginLeft">Marge gauche (mm)</Label>
+                    <Input
+                      id="pdfMarginLeft"
+                      name="pdfMarginLeft"
+                      type="number"
+                      value={formState.pdfMarginLeft}
+                      onChange={handleInputChange}
+                      min="0"
+                      max="50"
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer les paramètres
+                    </>
+                  )}
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -321,230 +981,4 @@ const SettingsPage = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <form className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="notify-orders">Nouvelles commandes</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Recevez des notifications pour les nouvelles commandes
-                      </p>
-                    </div>
-                    <Switch id="notify-orders" defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="notify-stock">Alerte de stock</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Recevez des notifications lorsque le stock est faible
-                      </p>
-                    </div>
-                    <Switch id="notify-stock" defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="notify-deliveries">Livraisons</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Recevez des notifications pour les mises à jour de livraison
-                      </p>
-                    </div>
-                    <Switch id="notify-deliveries" defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="notify-marketing">Marketing</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Recevez des notifications pour les campagnes marketing
-                      </p>
-                    </div>
-                    <Switch id="notify-marketing" defaultChecked />
-                  </div>
-                </div>
-                
-                <div className="pt-4">
-                  <Button type="submit">Enregistrer les modifications</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Onglet Sécurité */}
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sécurité</CardTitle>
-              <CardDescription>
-                Configurez les paramètres de sécurité de votre application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="current-password">Mot de passe actuel</Label>
-                  <Input
-                    id="current-password"
-                    type="password"
-                    placeholder="Entrez votre mot de passe actuel"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">Nouveau mot de passe</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    placeholder="Entrez votre nouveau mot de passe"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="Confirmez votre nouveau mot de passe"
-                  />
-                </div>
-
-                <div className="pt-2">
-                  <Button>Mettre à jour le mot de passe</Button>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-6">
-                <h3 className="font-medium">Authentification à deux facteurs</h3>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="two-factor">Activer l'authentification à deux facteurs</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Sécurisez davantage votre compte avec une couche supplémentaire de protection
-                    </p>
-                  </div>
-                  <Switch id="two-factor" />
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-6">
-                <h3 className="font-medium">Permissions</h3>
-                <div className="grid gap-4">
-                  <Button 
-                    variant="outline"
-                    onClick={() => downloadFile("permissions-report.csv", "Role,Module,Create,Read,Update,Delete\nAdmin,All,Yes,Yes,Yes,Yes\nManager,Products,Yes,Yes,Yes,No\nManager,Orders,Yes,Yes,Yes,No")}
-                  >
-                    Télécharger le rapport de permissions
-                  </Button>
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium">Journal d'audit</h3>
-                  <Button 
-                    variant="outline"
-                    onClick={() => downloadFile("audit-log.csv", "Timestamp,User,Action,IP\n2023-05-01 14:23:45,admin@example.com,Login,192.168.1.1\n2023-05-02 09:12:33,admin@example.com,Settings Update,192.168.1.1")}
-                  >
-                    Télécharger le journal d'audit
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Onglet Avancé */}
-        <TabsContent value="advanced">
-          <Card>
-            <CardHeader>
-              <CardTitle>Paramètres avancés</CardTitle>
-              <CardDescription>
-                Configurez les paramètres avancés de votre application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="analyticsEnabled">Activer les analytics</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Suivez les performances de votre application
-                      </p>
-                    </div>
-                    <Switch
-                      id="analyticsEnabled"
-                      checked={formState.analyticsEnabled}
-                      onCheckedChange={(checked) =>
-                        handleSwitchChange("analyticsEnabled", checked)
-                      }
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <Label>Exportation des données</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => downloadFile("sales-report.csv", "Date,Product,Quantity,Revenue\n2023-05-01,Product A,10,5000\n2023-05-01,Product B,5,2500")}
-                    >
-                      Exporter les ventes (CSV)
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => downloadFile("customer-report.csv", "ID,Name,Email,Orders,Total Spend\n1,John Doe,john@example.com,5,2500\n2,Jane Smith,jane@example.com,3,1500")}
-                    >
-                      Exporter les clients (CSV)
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => downloadFile("analytics-report.json", JSON.stringify({visits: 1500, conversions: 120, revenue: 15000}, null, 2))}
-                    >
-                      Exporter les analytics (JSON)
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => downloadFile("inventory-report.csv", "Product,SKU,Stock,Value\nProduct A,SKU001,150,7500\nProduct B,SKU002,75,3750")}
-                    >
-                      Exporter l'inventaire (CSV)
-                    </Button>
-                  </div>
-                </div>
-                
-                <Button type="submit">Enregistrer les modifications</Button>
-              </form>
-
-              <div className="pt-6 border-t">
-                <div className="space-y-4">
-                  <h3 className="font-medium text-destructive">Zone de danger</h3>
-                  <div className="grid gap-4">
-                    <Button 
-                      variant="destructive" 
-                      onClick={() => {
-                        toast({
-                          title: "Attention",
-                          description: "Cette action nécessite une confirmation supplémentaire.",
-                          variant: "destructive"
-                        });
-                      }}
-                    >
-                      Réinitialiser tous les paramètres
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </Layout>
-  );
-};
-
-export default SettingsPage;
+                <div className="space-

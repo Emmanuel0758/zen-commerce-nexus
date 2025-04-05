@@ -71,7 +71,7 @@ const exportJson = (
 };
 
 /**
- * Exports data as PDF
+ * Exports data as PDF with improved company information and structure
  */
 const exportPdf = (
   fileName: string,
@@ -79,48 +79,147 @@ const exportPdf = (
   metadata?: Record<string, any>
 ): boolean => {
   try {
+    // Get app settings from localStorage to include company information
+    const appSettingsStr = localStorage.getItem('appSettings');
+    const appSettings = appSettingsStr ? JSON.parse(appSettingsStr) : {
+      appName: 'Zen Commerce',
+      logo: null,
+      currency: 'XOF'
+    };
+    
     const doc = new jsPDF();
     
-    // Add title and metadata if provided
+    // Header with company information
+    if (appSettings.logo) {
+      try {
+        doc.addImage(appSettings.logo, 'JPEG', 15, 10, 30, 30);
+      } catch (error) {
+        console.error("Erreur lors du chargement du logo:", error);
+        doc.setFontSize(22);
+        doc.setTextColor(128, 0, 128);
+        doc.text(appSettings.appName.substring(0, 1), 25, 25);
+      }
+    }
+    
+    // Company name and title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text(appSettings.appName.toUpperCase(), appSettings.logo ? 50 : 15, 25);
+    
+    // Company contact info
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('123 Avenue du Commerce', appSettings.logo ? 50 : 15, 32);
+    doc.text('Abidjan, Côte d\'Ivoire', appSettings.logo ? 50 : 15, 37);
+    doc.text('contact@' + appSettings.appName.toLowerCase().replace(/\s/g, '') + '.com', appSettings.logo ? 50 : 15, 42);
+    
+    // Document title
+    const title = metadata?.title || `Rapport ${fileName}`;
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title.toUpperCase(), 105, 55, { align: 'center' });
+    
+    // Export date and contextual information
+    doc.setFontSize(11);
+    doc.text(`Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`, 105, 62, { align: 'center' });
+    
+    // Add metadata as contextual information
     if (metadata) {
-      doc.setFontSize(18);
-      doc.text(metadata.title || fileName, 14, 22);
+      let yPosition = 70;
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
       
-      let yPosition = 30;
-      for (const key in metadata) {
-        if (key !== 'title') {
-          const value = typeof metadata[key] === 'string' 
-            ? metadata[key] 
-            : JSON.stringify(metadata[key]);
-          doc.text(`${key}: ${value}`, 14, yPosition);
+      // Filter out title which is already displayed
+      const contextualInfo = Object.entries(metadata).filter(([key]) => key !== 'title');
+      
+      for (const [key, value] of contextualInfo) {
+        if (typeof value !== 'object') {
+          const formattedKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          doc.text(`${formattedKey}: ${value}`, 15, yPosition);
           yPosition += 6;
         }
       }
       
-      yPosition += 10;
+      yPosition += 5;
       
-      // Convert data to table format for autotable
+      // Table data
       if (data.length > 0) {
         const firstItem = data[0];
         const headers = Object.keys(firstItem);
         const rows = data.map(item => headers.map(header => item[header]));
         
+        // Format headers for display
+        const formattedHeaders = headers.map(header => 
+          header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')
+        );
+        
         // @ts-ignore - jspdf-autotable functionality
         doc.autoTable({
-          head: [headers],
+          head: [formattedHeaders],
           body: rows,
           startY: yPosition,
+          theme: 'grid',
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [66, 66, 66] },
+          margin: { top: 10 }
+        });
+      } else {
+        doc.text("Aucune donnée disponible", 15, yPosition);
+      }
+    } else {
+      // Simple table for data without metadata
+      if (data.length > 0) {
+        const firstItem = data[0];
+        const headers = Object.keys(firstItem);
+        const rows = data.map(item => headers.map(header => item[header]));
+        
+        const formattedHeaders = headers.map(header => 
+          header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')
+        );
+        
+        // @ts-ignore - jspdf-autotable functionality
+        doc.autoTable({
+          head: [formattedHeaders],
+          body: rows,
+          startY: 70,
           theme: 'grid',
           styles: { fontSize: 8 },
           headStyles: { fillColor: [66, 66, 66] }
         });
       } else {
-        doc.text("No data available", 14, yPosition);
+        doc.text("Aucune donnée disponible", 15, 70);
       }
-    } else {
-      // Simple text export for non-tabular data
-      doc.text(JSON.stringify(data, null, 2), 10, 10);
+    }
+    
+    // Add summary information at the bottom if we have data
+    if (data.length > 0) {
+      const finalY = (doc as any).lastAutoTable.finalY || 70;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total éléments: ${data.length}`, 15, finalY + 15);
+      
+      // Add custom summary based on data type if needed
+      if (metadata?.summary) {
+        const summaryLines = typeof metadata.summary === 'string' 
+          ? [metadata.summary] 
+          : Object.entries(metadata.summary).map(([key, value]) => `${key}: ${value}`);
+          
+        let summaryY = finalY + 22;
+        summaryLines.forEach(line => {
+          doc.text(line, 15, summaryY);
+          summaryY += 7;
+        });
+      }
+    }
+    
+    // Add page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${appSettings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
     }
     
     doc.save(`${fileName}.pdf`);
@@ -145,6 +244,12 @@ const exportExcel = (
       return false;
     }
     
+    // Get app settings to include company info
+    const appSettingsStr = localStorage.getItem('appSettings');
+    const appSettings = appSettingsStr ? JSON.parse(appSettingsStr) : {
+      appName: 'Zen Commerce'
+    };
+    
     // Get headers from the first data item
     const headers = Object.keys(data[0]);
     
@@ -164,13 +269,23 @@ const exportExcel = (
       csvContent += row.join(",") + "\n";
     });
     
-    // Add metadata as commented header if provided
+    // Add metadata and company info as commented header
+    const metadataLines = [
+      `# ${appSettings.appName}`,
+      `# Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`,
+      `# Fichier: ${fileName}`
+    ];
+    
     if (metadata) {
-      const metadataContent = Object.entries(metadata)
-        .map(([key, value]) => `# ${key}: ${value}`)
-        .join("\n");
-      csvContent = metadataContent + "\n\n" + csvContent;
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (typeof value !== 'object') {
+          metadataLines.push(`# ${key}: ${value}`);
+        }
+      });
     }
+    
+    const metadataContent = metadataLines.join("\n");
+    csvContent = metadataContent + "\n\n" + csvContent;
     
     // Create file download
     const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);

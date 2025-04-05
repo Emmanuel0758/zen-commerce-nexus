@@ -33,6 +33,21 @@ export const exportData = async (
 };
 
 /**
+ * Fonction utilitaire pour exporter des données
+ * @param data Les données à exporter
+ * @param format Le format d'exportation
+ * @param title Le titre du fichier
+ * @returns void
+ */
+export const handleExport = async (
+  data: any[],
+  format: "pdf" | "excel" | "json",
+  title: string
+): Promise<boolean> => {
+  return await exportData(data, format, title);
+};
+
+/**
  * Exporte les données au format PDF
  * @param data Les données à exporter
  * @param title Le titre de l'exportation
@@ -40,6 +55,20 @@ export const exportData = async (
  */
 const exportToPDF = (data: any[], title: string): boolean => {
   try {
+    // Si les données sont un objet complexe avec des métadonnées, extrayons le tableau
+    let tableData = Array.isArray(data) ? data : [];
+    
+    // Si c'est un objet avec une propriété qui est un tableau (comme produits, livraisons, etc.)
+    if (!Array.isArray(data)) {
+      // Chercher la première propriété qui est un tableau
+      for (const key in data) {
+        if (Array.isArray(data[key])) {
+          tableData = data[key];
+          break;
+        }
+      }
+    }
+    
     // Création du document PDF
     const doc = new jsPDF();
     const currentDate = new Date().toLocaleDateString();
@@ -54,7 +83,7 @@ const exportToPDF = (data: any[], title: string): boolean => {
     doc.setFontSize(12);
     
     // Preparation des données pour le tableau
-    const rows = data.map((item) => {
+    const rows = tableData.map((item) => {
       // Si c'est un projet
       if (item.id && item.name && item.status) {
         return [
@@ -76,7 +105,7 @@ const exportToPDF = (data: any[], title: string): boolean => {
     let headers;
     
     // Si c'est un projet
-    if (data[0]?.id && data[0]?.name && data[0]?.status) {
+    if (tableData[0]?.id && tableData[0]?.name && tableData[0]?.status) {
       headers = [
         "ID", 
         "Nom", 
@@ -89,7 +118,7 @@ const exportToPDF = (data: any[], title: string): boolean => {
       ];
     } else {
       // Sinon, utiliser les clés de l'objet comme entêtes
-      headers = Object.keys(data[0] || {});
+      headers = Object.keys(tableData[0] || {});
     }
     
     // Configuration et création du tableau
@@ -143,11 +172,25 @@ const exportToPDF = (data: any[], title: string): boolean => {
  */
 const exportToCSV = (data: any[], title: string): boolean => {
   try {
+    // Si les données sont un objet complexe avec des métadonnées, extrayons le tableau
+    let tableData = Array.isArray(data) ? data : [];
+    
+    // Si c'est un objet avec une propriété qui est un tableau (comme produits, livraisons, etc.)
+    if (!Array.isArray(data)) {
+      // Chercher la première propriété qui est un tableau
+      for (const key in data) {
+        if (Array.isArray(data[key])) {
+          tableData = data[key];
+          break;
+        }
+      }
+    }
+    
     // Préparation des entêtes du tableau
     let headers;
     
     // Si c'est un projet
-    if (data[0]?.id && data[0]?.name && data[0]?.status) {
+    if (tableData[0]?.id && tableData[0]?.name && tableData[0]?.status) {
       headers = [
         "ID", 
         "Nom", 
@@ -160,11 +203,11 @@ const exportToCSV = (data: any[], title: string): boolean => {
       ];
     } else {
       // Sinon, utiliser les clés de l'objet comme entêtes
-      headers = Object.keys(data[0] || {});
+      headers = Object.keys(tableData[0] || {});
     }
     
     // Préparation des lignes du tableau
-    const rows = data.map((item) => {
+    const rows = tableData.map((item) => {
       // Si c'est un projet
       if (item.id && item.name && item.status) {
         return [

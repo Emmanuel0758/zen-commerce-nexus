@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarNav } from "@/components/SidebarNav";
 import { DeliveryMapCard } from "@/components/DeliveryMapCard";
@@ -10,39 +11,51 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { useDataExport } from "@/utils/exportUtils";
+import { handleExport } from "@/utils/exportUtils";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LogisticsPage() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const { handleExport } = useDataExport();
   const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
 
   // Données de démo pour l'exportation
-  const demoLogisticsData = {
-    deliveries: [
-      { id: "DEL-1055", status: "en_cours", destination: "Abidjan Centre", date: "2025-04-02" },
-      { id: "DEL-1052", status: "retard", destination: "Bouaké", date: "2025-04-01" },
-      { id: "DEL-1050", status: "prêt", destination: "Yamoussoukro", date: "2025-04-03" },
-      { id: "DEL-1048", status: "en_cours", destination: "San-Pédro", date: "2025-04-02" },
-      { id: "DEL-1045", status: "en_cours", destination: "Korhogo", date: "2025-04-01" },
-    ],
-    carriers: [
-      { id: 1, name: "Livreur Express Abidjan", active: true, zone: "Sud" },
-      { id: 2, name: "Transporteur National CI", active: true, zone: "National" },
-      { id: 3, name: "Livreur Yamoussoukro", active: false, zone: "Centre" },
-    ],
-    zones: [
-      { id: 1, name: "Abidjan et environs", deliveryTime: "24h", price: "1000 FCFA" },
-      { id: 2, name: "Villes principales", deliveryTime: "48h", price: "2500 FCFA" },
-      { id: 3, name: "Rural", deliveryTime: "72-96h", price: "5000 FCFA" },
-    ]
-  };
+  const demoLogisticsData = [
+    { id: "DEL-1055", status: "en_cours", destination: "Abidjan Centre", date: "2025-04-02" },
+    { id: "DEL-1052", status: "retard", destination: "Bouaké", date: "2025-04-01" },
+    { id: "DEL-1050", status: "prêt", destination: "Yamoussoukro", date: "2025-04-03" },
+    { id: "DEL-1048", status: "en_cours", destination: "San-Pédro", date: "2025-04-02" },
+    { id: "DEL-1045", status: "en_cours", destination: "Korhogo", date: "2025-04-01" },
+  ];
 
   // Fonction pour gérer l'export de données
   const handleExportRequest = async (format: "json" | "pdf" | "excel") => {
-    await handleExport(demoLogisticsData, format, "logistique-donnees");
+    setIsExporting(true);
+    try {
+      const success = await handleExport(demoLogisticsData, format, "logistique-donnees");
+      if (success) {
+        toast({
+          title: "Exportation réussie",
+          description: `Les données ont été exportées avec succès au format ${format.toUpperCase()}.`,
+        });
+      } else {
+        toast({
+          title: "Erreur d'exportation",
+          description: `Une erreur est survenue lors de l'exportation au format ${format.toUpperCase()}`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'exportation:", error);
+      toast({
+        title: "Erreur d'exportation",
+        description: "Une erreur inattendue est survenue",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Fonction pour gérer l'import de données
@@ -68,7 +81,7 @@ export default function LogisticsPage() {
               <div className="flex gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2">
+                    <Button variant="outline" className="flex items-center gap-2" disabled={isExporting}>
                       <Download className="h-4 w-4" />
                       Exporter
                     </Button>

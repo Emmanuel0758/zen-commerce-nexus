@@ -1,19 +1,17 @@
 
-import { jsPDF } from "jspdf";
-import PubSub from "pubsub-js";
+import { PubSub } from "pubsub-js";
 
-// Types étendus pour jsPDF
 declare module "jspdf" {
   interface jsPDF {
-    // Extension pour autoTable
     autoTable: any;
+    // Autres méthodes de l'extension autoTable
+    lastAutoTable: any;
+    previousAutoTable: any;
+    autoTableEndPosY: number;
+    autoTableHtmlToJson: (tableElem: HTMLTableElement, delimeter?: string) => any;
+    autoTableText: (text: string, x: number, y: number, styles: any) => void;
     
-    // Méthode lastAutoTable ajoutée par le plugin autoTable
-    lastAutoTable: {
-      finalY: number;
-    };
-    
-    // Propriétés internes
+    // On définit correctement l'interface pour internal
     internal: {
       events: PubSub;
       scaleFactor: number;

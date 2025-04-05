@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -34,18 +35,30 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, FileDown } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Download, FileDown, Plus } from "lucide-react";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { useAppSettings } from "@/hooks/use-app-settings";
 import "@/types/jspdf-extensions";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 type Order = {
   id: string;
   customer: string;
   date: string;
-  total: string;
   items: number;
+  total: string;
   status: "pending" | "processing" | "completed" | "cancelled" | "onhold";
 };
 
@@ -116,6 +129,31 @@ const demoOrders: Order[] = [
   },
 ];
 
+// Schema de validation pour le formulaire de nouvelle commande
+const newOrderSchema = z.object({
+  customer: z.string().min(3, { message: "Le nom du client est requis (min. 3 caractères)" }),
+  items: z.array(z.object({
+    product: z.string().min(1, { message: "Veuillez sélectionner un produit" }),
+    quantity: z.number().min(1, { message: "La quantité doit être d'au moins 1" })
+  })).min(1),
+  status: z.enum(["pending", "processing", "completed", "cancelled", "onhold"], {
+    required_error: "Veuillez sélectionner un statut"
+  }),
+  shippingAddress: z.string().optional(),
+  notes: z.string().optional()
+});
+
+type NewOrderFormValues = z.infer<typeof newOrderSchema>;
+
+// Produits de démonstration
+const demoProducts = [
+  { id: "prod-1", name: "Zen Classic (500ml)", price: 9999 },
+  { id: "prod-2", name: "Zen Boost (250ml)", price: 7250 },
+  { id: "prod-3", name: "Zen Relax (1L)", price: 14995 },
+  { id: "prod-4", name: "Zen Energy (330ml)", price: 6500 },
+  { id: "prod-5", name: "Zen Premium (750ml)", price: 19999 },
+];
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>(demoOrders);
   const [searchQuery, setSearchQuery] = useState("");
@@ -127,6 +165,18 @@ export default function OrdersPage() {
   const { settings } = useAppSettings();
 
   const { toast } = useToast();
+  
+  // Formulaire pour nouvelle commande
+  const form = useForm<NewOrderFormValues>({
+    resolver: zodResolver(newOrderSchema),
+    defaultValues: {
+      customer: "",
+      items: [{ product: "", quantity: 1 }],
+      status: "pending",
+      shippingAddress: "",
+      notes: ""
+    },
+  });
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.customer.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -213,6 +263,7 @@ export default function OrdersPage() {
         ];
       });
       
+      // @ts-ignore
       doc.autoTable({
         startY: 70,
         head: headers,
@@ -233,7 +284,7 @@ export default function OrdersPage() {
         }
       });
       
-      const finalY = doc.lastAutoTable.finalY;
+      const finalY = (doc.lastAutoTable as any).finalY;
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
@@ -280,12 +331,70 @@ export default function OrdersPage() {
     });
   };
 
-  const handleCreateNewOrder = () => {
-    toast({
-      title: "Fonctionnalité en développement",
-      description: "La création de nouvelles commandes sera disponible prochainement"
+  // Fonction de création d'une nouvelle commande
+  const handleCreateNewOrder = (data: NewOrderFormValues) => {
+    // Calcul du total
+    let totalAmount = 0;
+    let itemCount = 0;
+    
+    data.items.forEach(item => {
+      const product = demoProducts.find(p => p.id === item.product);
+      if (product) {
+        totalAmount += product.price * item.quantity;
+        itemCount += item.quantity;
+      }
     });
+    
+    // Formatage du total
+    const totalFormatted = `${totalAmount.toLocaleString('fr-FR')} FCFA`;
+    
+    // Création de l'ID
+    const orderNumber = 1050 + orders.length;
+    const orderId = `ZEN-${orderNumber}`;
+    
+    // Date du jour au format français
+    const today = new Date().toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
+    
+    // Création de la nouvelle commande
+    const newOrder: Order = {
+      id: orderId,
+      customer: data.customer,
+      date: today,
+      items: itemCount,
+      total: totalFormatted,
+      status: data.status,
+    };
+    
+    // Ajout de la commande à la liste
+    setOrders([newOrder, ...orders]);
+    
+    // Réinitialisation du formulaire
+    form.reset();
+    
+    // Fermer le dialogue
     setIsNewOrderDialogOpen(false);
+    
+    // Message de succès
+    toast({
+      title: "Commande créée",
+      description: `La commande ${orderId} a été créée avec succès.`
+    });
+  };
+
+  const handleAddProductField = () => {
+    const currentItems = form.getValues().items;
+    form.setValue('items', [...currentItems, { product: "", quantity: 1 }]);
+  };
+
+  const handleRemoveProductField = (index: number) => {
+    const currentItems = form.getValues().items;
+    if (currentItems.length > 1) {
+      form.setValue('items', currentItems.filter((_, i) => i !== index));
+    }
   };
 
   const handleDownloadInvoice = (order: Order) => {
@@ -330,6 +439,7 @@ export default function OrdersPage() {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     
+    // @ts-ignore
     doc.autoTable({
       startY: 105,
       head: [['Description', 'Qté', 'Prix unitaire', 'Total']],
@@ -349,7 +459,7 @@ export default function OrdersPage() {
       }
     });
     
-    const finalY = doc.lastAutoTable.finalY + 15;
+    const finalY = (doc.lastAutoTable as any).finalY + 15;
     
     doc.setFont('helvetica', 'bold');
     doc.text('Total', 150, finalY);
@@ -427,21 +537,7 @@ export default function OrdersPage() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Button onClick={() => setIsNewOrderDialogOpen(true)}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              <Plus className="mr-2 h-4 w-4" />
               Nouvelle Commande
             </Button>
           </div>
@@ -711,22 +807,169 @@ export default function OrdersPage() {
       </Dialog>
 
       <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Créer une nouvelle commande</DialogTitle>
             <DialogDescription>
               Remplissez les informations pour créer une nouvelle commande
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <p className="text-center text-muted-foreground">
-              Fonctionnalité en cours de développement
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewOrderDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleCreateNewOrder}>Créer</Button>
-          </DialogFooter>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreateNewOrder)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="customer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nom du client" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Statut</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un statut" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pending">En attente</SelectItem>
+                          <SelectItem value="processing">En traitement</SelectItem>
+                          <SelectItem value="completed">Terminée</SelectItem>
+                          <SelectItem value="cancelled">Annulée</SelectItem>
+                          <SelectItem value="onhold">En attente de validation</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Produits</FormLabel>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleAddProductField}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter un produit
+                  </Button>
+                </div>
+                
+                {form.getValues().items.map((_, index) => (
+                  <div key={index} className="flex items-end gap-2">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.product`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner un produit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {demoProducts.map(product => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                    {product.name} - {product.price.toLocaleString('fr-FR')} FCFA
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem className="w-20">
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              placeholder="Qté"
+                              {...field}
+                              onChange={e => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleRemoveProductField(index)}
+                      disabled={form.getValues().items.length <= 1}
+                    >
+                      Retirer
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="shippingAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse de livraison (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Adresse de livraison" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Notes concernant la commande" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsNewOrderDialogOpen(false)}>Annuler</Button>
+                <Button type="submit">Créer la commande</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

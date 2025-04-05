@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   Home, Package, ShoppingCart, Users, Truck, BarChart2, 
-  Settings, Megaphone, QrCode, Bot 
+  Settings, Megaphone, QrCode, Bot, GanttChartSquare
 } from "lucide-react";
 import { useAppSettings } from "@/hooks/use-app-settings";
 
@@ -45,6 +45,11 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
       title: "Marketing",
       href: "/marketing",
       icon: <Megaphone className="h-5 w-5" />,
+    },
+    {
+      title: "Projets",
+      href: "/projets",
+      icon: <GanttChartSquare className="h-5 w-5" />,
     },
     {
       title: "QR Code",

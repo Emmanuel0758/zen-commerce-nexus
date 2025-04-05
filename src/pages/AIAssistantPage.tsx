@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import Layout from "@/components/Layout";
 import { AIAssistant } from "@/components/AIAssistant";
 import { Card } from "@/components/ui/card";

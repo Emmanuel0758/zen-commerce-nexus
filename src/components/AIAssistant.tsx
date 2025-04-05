@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -7,7 +6,8 @@ import {
   Bot, Send, Loader2, QrCode, Copy, Mail, Phone, Wifi, Text, FileText, 
   BarChart, ImageIcon, MessageSquareText, Palette, Code, Lightbulb, 
   CalendarIcon, Calculator, Braces, BookOpen, Search, Megaphone, 
-  PenTool, ListChecks, Share2, Clock, MapPin, Globe, Headphones
+  PenTool, ListChecks, Share2, Clock, MapPin, Globe, Headphones,
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -83,7 +83,6 @@ export const AIAssistant = () => {
   const [mapLocation, setMapLocation] = useState<string>("");
   const [mapResults, setMapResults] = useState<{name: string, address: string, imageUrl: string}[]>([]);
 
-  // Fonction simulant une réponse d'IA pour QR Codes
   const generateQRSuggestions = async () => {
     if (!prompt.trim()) {
       toast({
@@ -97,11 +96,8 @@ export const AIAssistant = () => {
     setIsLoading(true);
     setQrSuggestions([]);
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Logique de génération de suggestions basée sur des mots clés simples
-    // Dans une implémentation réelle, cela serait remplacé par un appel à une API d'IA
     const lowercasePrompt = prompt.toLowerCase();
     const newSuggestions: SuggestionType[] = [];
 
@@ -165,7 +161,6 @@ export const AIAssistant = () => {
       });
     }
 
-    // Si aucune suggestion spécifique n'a été générée, fournir une suggestion de texte générique
     if (newSuggestions.length === 0) {
       newSuggestions.push({
         type: "text",
@@ -188,7 +183,6 @@ export const AIAssistant = () => {
     });
   };
 
-  // Fonction pour générer du texte
   const generateTextContent = async () => {
     if (!prompt.trim()) {
       toast({
@@ -202,7 +196,6 @@ export const AIAssistant = () => {
     setIsLoading(true);
     setTextSuggestions([]);
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const mockTexts: Record<string, string[]> = {
@@ -233,7 +226,6 @@ export const AIAssistant = () => {
       ]
     };
 
-    // Générer quelques textes basés sur le type sélectionné
     const texts = mockTexts[textType as keyof typeof mockTexts] || mockTexts.custom;
     const generatedTexts = texts.map(content => ({
       prompt,
@@ -250,7 +242,6 @@ export const AIAssistant = () => {
     });
   };
 
-  // Fonction pour générer des palettes de couleurs
   const generateColorPalettes = async () => {
     if (!prompt.trim()) {
       toast({
@@ -264,10 +255,8 @@ export const AIAssistant = () => {
     setIsLoading(true);
     setColorPalettes([]);
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 1800));
 
-    // Palettes prédéfinies selon des thèmes communs
     const mockPalettes = [
       {
         name: "Moderne & Minimaliste",
@@ -300,7 +289,6 @@ export const AIAssistant = () => {
     });
   };
 
-  // Fonction pour générer des images
   const generateImages = async () => {
     if (!prompt.trim()) {
       toast({
@@ -314,10 +302,8 @@ export const AIAssistant = () => {
     setIsLoading(true);
     setGeneratedImages([]);
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 2500));
 
-    // Images fictives (dans une vraie implémentation, on appellerait une API comme DALL-E ou Midjourney)
     const styleText = imageStyle === "photorealistic" ? "Photorealistic" : 
                       imageStyle === "cartoon" ? "Cartoon Style" : 
                       imageStyle === "abstract" ? "Abstract Art" : "3D Rendered";
@@ -349,7 +335,6 @@ export const AIAssistant = () => {
     });
   };
 
-  // Fonction pour générer du code
   const generateCode = async () => {
     if (!prompt.trim()) {
       toast({
@@ -363,10 +348,8 @@ export const AIAssistant = () => {
     setIsLoading(true);
     setCodeSnippets([]);
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Exemples de code en fonction du langage sélectionné
     let generatedSnippets: CodeSnippetType[] = [];
 
     if (codeLanguage === "javascript") {
@@ -492,7 +475,6 @@ if __name__ == '__main__':
   document.getElementById('contactForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Validation basic
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
     const message = document.getElementById('message').value.trim();
@@ -502,7 +484,6 @@ if __name__ == '__main__':
       return;
     }
     
-    // Envoyer le formulaire (à implémenter)
     console.log('Formulaire envoyé:', { name, email, message });
     alert('Votre message a été envoyé!');
     this.reset();
@@ -743,7 +724,6 @@ ORDER BY c.date_commande DESC;`
     });
   };
 
-  // Fonction pour traduire du texte
   const translateText = async () => {
     if (!prompt.trim()) {
       toast({
@@ -757,10 +737,8 @@ ORDER BY c.date_commande DESC;`
     setIsLoading(true);
     setTranslations([]);
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Traductions simulées
     const languages: Record<string, string> = {
       english: "Hello, this is a translation of your text. Thank you for using our translation service.",
       french: "Bonjour, ceci est une traduction de votre texte. Merci d'utiliser notre service de traduction.",
@@ -787,7 +765,6 @@ ORDER BY c.date_commande DESC;`
     });
   };
 
-  // Fonction pour effectuer des calculs
   const performCalculation = async () => {
     if (!prompt.trim()) {
       toast({
@@ -801,10 +778,8 @@ ORDER BY c.date_commande DESC;`
     setIsLoading(true);
     setCalculationResults("");
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Simulation de résolution de problèmes mathématiques
     let result = "";
     
     if (prompt.includes("+") || prompt.includes("-") || prompt.includes("*") || prompt.includes("/")) {
@@ -862,7 +837,6 @@ La solution est cohérente avec les données fournies.
     });
   };
 
-  // Fonction pour générer des suggestions de planning
   const generateScheduleSuggestions = async () => {
     if (!prompt.trim()) {
       toast({
@@ -876,10 +850,6 @@ La solution est cohérente avec les données fournies.
     setIsLoading(true);
     setSchedules([]);
 
-    // Simuler un délai d'appel API
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Date actuelle pour les exemples
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -888,7 +858,6 @@ La solution est cohérente avec les données fournies.
       return date.toISOString().split('T')[0];
     };
 
-    // Suggestions de planning basées sur le type sélectionné
     let scheduleSuggestions: ScheduleSuggestionType[] = [];
     
     if (scheduleType === "work") {
@@ -974,7 +943,6 @@ La solution est cohérente avec les données fournies.
     });
   };
 
-  // Fonction pour rechercher des lieux
   const searchLocations = async () => {
     if (!mapLocation.trim()) {
       toast({
@@ -988,10 +956,8 @@ La solution est cohérente avec les données fournies.
     setIsLoading(true);
     setMapResults([]);
 
-    // Simuler un délai d'appel API
     await new Promise(resolve => setTimeout(resolve, 1800));
 
-    // Résultats simulés de recherche
     const mockResults = [
       {
         name: "Restaurant Le Gourmet",
@@ -1400,7 +1366,6 @@ La solution est cohérente avec les données fournies.
         </CardFooter>
       </Card>
 
-      {/* QR Code Suggestions */}
       {activeTab === "qrcode" && qrSuggestions.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Suggestions de QR Code</h3>
@@ -1436,7 +1401,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Text Suggestions */}
       {activeTab === "text" && textSuggestions.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Suggestions de texte</h3>
@@ -1474,7 +1438,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Color Palettes */}
       {activeTab === "color" && colorPalettes.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Palettes de couleurs</h3>
@@ -1508,7 +1471,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Generated Images */}
       {activeTab === "image" && generatedImages.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Images générées</h3>
@@ -1538,7 +1500,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Code Snippets */}
       {activeTab === "code" && codeSnippets.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Snippets de code</h3>
@@ -1573,7 +1534,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Translations */}
       {activeTab === "translate" && translations.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Traduction</h3>
@@ -1624,7 +1584,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Calculation Results */}
       {activeTab === "calculate" && calculationResults && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Résultat du calcul</h3>
@@ -1657,7 +1616,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Schedule Suggestions */}
       {activeTab === "schedule" && schedules.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Planning proposé</h3>
@@ -1708,7 +1666,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Map Results */}
       {activeTab === "map" && mapResults.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Résultats pour "{mapLocation}"</h3>
@@ -1752,7 +1709,6 @@ La solution est cohérente avec les données fournies.
         </div>
       )}
 
-      {/* Image modal */}
       <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -1782,4 +1738,3 @@ La solution est cohérente avec les données fournies.
     </div>
   );
 };
-

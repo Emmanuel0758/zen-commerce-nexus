@@ -1,5 +1,6 @@
 
 import { jsPDF } from "jspdf";
+import PubSub from "pubsub-js";
 
 // Types étendus pour jsPDF
 declare module "jspdf" {
@@ -14,7 +15,7 @@ declare module "jspdf" {
     
     // Propriétés internes
     internal: {
-      events: any;
+      events: PubSub;
       scaleFactor: number;
       pageSize: {
         width: number;

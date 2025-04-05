@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Plus, Calendar, KanbanSquare, ClipboardList, Clock, Users,
@@ -270,6 +271,7 @@ export default function ProjectsPage() {
       description: `Le projet "${createdProject.name}" a été créé avec succès.`,
     });
     
+    // Refresh the view to update the projects display
     const currentView = view;
     setView("list");
     setTimeout(() => {

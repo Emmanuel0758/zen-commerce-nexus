@@ -20,9 +20,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { X, Plus, UserPlus } from "lucide-react";
+import { X, Plus, UserPlus, User } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 const teamMembers = [
   {
@@ -92,6 +98,15 @@ export function ProjectTeamDialog({
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [role, setRole] = useState("all");
+  const [activeTab, setActiveTab] = useState("existing");
+  
+  // State for new member creation
+  const [newMember, setNewMember] = useState({
+    name: "",
+    email: "",
+    role: "Développeur Frontend",
+    skills: "",
+  });
 
   const filteredMembers = teamMembers.filter(
     (member) =>
@@ -122,6 +137,60 @@ export function ProjectTeamDialog({
     
     onOpenChange(false);
   };
+  
+  const handleNewMemberChange = (field: string, value: string) => {
+    setNewMember(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  const handleCreateNewMember = () => {
+    // Validate inputs
+    if (!newMember.name || !newMember.email || !newMember.role) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create new team member
+    const skillsArray = newMember.skills
+      .split(',')
+      .map(skill => skill.trim())
+      .filter(skill => skill);
+    
+    const newTeamMember = {
+      id: teamMembers.length + 1,
+      name: newMember.name,
+      email: newMember.email,
+      role: newMember.role,
+      avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+      skills: skillsArray.length > 0 ? skillsArray : ["Non spécifié"],
+    };
+    
+    // Add to existing team members and clear form
+    teamMembers.push(newTeamMember);
+    setSelectedMembers(prev => [...prev, newTeamMember.id]);
+    
+    toast({
+      title: "Membre créé",
+      description: `${newMember.name} a été ajouté à l'équipe`,
+    });
+    
+    // Reset form
+    setNewMember({
+      name: "",
+      email: "",
+      role: "Développeur Frontend",
+      skills: "",
+    });
+    
+    // Switch to existing tab
+    setActiveTab("existing");
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,99 +202,174 @@ export function ProjectTeamDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="flex items-center gap-4">
-            <div className="grid flex-1 gap-2">
-              <Label htmlFor="search">Rechercher des membres</Label>
-              <Input
-                id="search"
-                placeholder="Nom, email ou rôle..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="existing">Membres existants</TabsTrigger>
+            <TabsTrigger value="create">Nouveau membre</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="existing" className="space-y-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="search">Rechercher des membres</Label>
+                <Input
+                  id="search"
+                  placeholder="Nom, email ou rôle..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="grid w-[180px] gap-2">
+                <Label htmlFor="role">Filtrer par rôle</Label>
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Tous les rôles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les rôles</SelectItem>
+                    <SelectItem value="Chef de projet">Chef de projet</SelectItem>
+                    <SelectItem value="Développeur Frontend">
+                      Développeur Frontend
+                    </SelectItem>
+                    <SelectItem value="Développeur Backend">
+                      Développeur Backend
+                    </SelectItem>
+                    <SelectItem value="Designer UI/UX">Designer UI/UX</SelectItem>
+                    <SelectItem value="Testeur QA">Testeur QA</SelectItem>
+                    <SelectItem value="DevOps">DevOps</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="grid w-[180px] gap-2">
-              <Label htmlFor="role">Filtrer par rôle</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Tous les rôles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les rôles</SelectItem>
-                  <SelectItem value="Chef de projet">Chef de projet</SelectItem>
-                  <SelectItem value="Développeur Frontend">
-                    Développeur Frontend
-                  </SelectItem>
-                  <SelectItem value="Développeur Backend">
-                    Développeur Backend
-                  </SelectItem>
-                  <SelectItem value="Designer UI/UX">Designer UI/UX</SelectItem>
-                  <SelectItem value="Testeur QA">Testeur QA</SelectItem>
-                  <SelectItem value="DevOps">DevOps</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          <div className="border rounded-md p-2">
-            <div className="font-medium mb-2">Membres sélectionnés</div>
-            <div className="flex flex-wrap gap-2">
-              {selectedMembers.length === 0 ? (
-                <div className="text-sm text-muted-foreground">
-                  Aucun membre sélectionné
-                </div>
-              ) : (
-                teamMembers
-                  .filter((m) => selectedMembers.includes(m.id))
-                  .map((member) => (
-                    <Badge
-                      key={member.id}
-                      variant="secondary"
-                      className="flex items-center gap-1 pl-1"
-                    >
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback>
-                          {member.name.substring(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{member.name}</span>
-                      <button
-                        className="ml-1 rounded-full hover:bg-muted p-0.5"
-                        onClick={() => handleToggleMember(member.id)}
+            <div className="border rounded-md p-2">
+              <div className="font-medium mb-2">Membres sélectionnés</div>
+              <div className="flex flex-wrap gap-2">
+                {selectedMembers.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">
+                    Aucun membre sélectionné
+                  </div>
+                ) : (
+                  teamMembers
+                    .filter((m) => selectedMembers.includes(m.id))
+                    .map((member) => (
+                      <Badge
+                        key={member.id}
+                        variant="secondary"
+                        className="flex items-center gap-1 pl-1"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))
-              )}
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback>
+                            {member.name.substring(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{member.name}</span>
+                        <button
+                          className="ml-1 rounded-full hover:bg-muted p-0.5"
+                          onClick={() => handleToggleMember(member.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))
+                )}
+              </div>
             </div>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          <div className="max-h-[300px] overflow-y-auto space-y-2">
-            {role !== "all"
-              ? filteredMembers
-                  .filter((m) => m.role === role)
-                  .map((member) => (
+            <div className="max-h-[300px] overflow-y-auto space-y-2">
+              {role !== "all"
+                ? filteredMembers
+                    .filter((m) => m.role === role)
+                    .map((member) => (
+                      <MemberItem
+                        key={member.id}
+                        member={member}
+                        isSelected={selectedMembers.includes(member.id)}
+                        onToggle={handleToggleMember}
+                      />
+                    ))
+                : filteredMembers.map((member) => (
                     <MemberItem
                       key={member.id}
                       member={member}
                       isSelected={selectedMembers.includes(member.id)}
                       onToggle={handleToggleMember}
                     />
-                  ))
-              : filteredMembers.map((member) => (
-                  <MemberItem
-                    key={member.id}
-                    member={member}
-                    isSelected={selectedMembers.includes(member.id)}
-                    onToggle={handleToggleMember}
-                  />
-                ))}
-          </div>
-        </div>
+                  ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="create" className="space-y-4 py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-member-name">Nom complet *</Label>
+                <Input
+                  id="new-member-name"
+                  placeholder="Ex: Jean Dupont"
+                  value={newMember.name}
+                  onChange={(e) => handleNewMemberChange('name', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="new-member-email">Email *</Label>
+                <Input
+                  id="new-member-email"
+                  type="email"
+                  placeholder="Ex: jean.dupont@example.com"
+                  value={newMember.email}
+                  onChange={(e) => handleNewMemberChange('email', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="new-member-role">Rôle *</Label>
+                <Select 
+                  value={newMember.role}
+                  onValueChange={(value) => handleNewMemberChange('role', value)}
+                >
+                  <SelectTrigger id="new-member-role">
+                    <SelectValue placeholder="Sélectionner un rôle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Chef de projet">Chef de projet</SelectItem>
+                    <SelectItem value="Développeur Frontend">Développeur Frontend</SelectItem>
+                    <SelectItem value="Développeur Backend">Développeur Backend</SelectItem>
+                    <SelectItem value="Designer UI/UX">Designer UI/UX</SelectItem>
+                    <SelectItem value="Testeur QA">Testeur QA</SelectItem>
+                    <SelectItem value="DevOps">DevOps</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="new-member-skills">Compétences (séparées par des virgules)</Label>
+                <Input
+                  id="new-member-skills"
+                  placeholder="Ex: Typescript, React, UX Design"
+                  value={newMember.skills}
+                  onChange={(e) => handleNewMemberChange('skills', e.target.value)}
+                />
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={handleCreateNewMember}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Créer le membre
+              </Button>
+            </div>
+            
+            <div className="text-xs text-muted-foreground">
+              * Champs obligatoires
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

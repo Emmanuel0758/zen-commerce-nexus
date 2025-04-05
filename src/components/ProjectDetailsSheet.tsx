@@ -26,12 +26,15 @@ import {
   Check,
   ClipboardList,
   Clock,
+  Download,
   FileText,
   LucideIcon,
   MoreHorizontal,
   Pencil,
   Plus,
   Save,
+  Trash2,
+  Upload,
   Users,
   X,
 } from "lucide-react";
@@ -79,6 +82,14 @@ export function ProjectDetailsSheet({
       avatar: "https://i.pravatar.cc/150?img=26",
     },
   ]);
+  
+  // Add state for documents
+  const [documents, setDocuments] = useState([
+    // Initial empty state, will be populated by user uploads
+  ]);
+  const [documentName, setDocumentName] = useState("");
+  const [documentType, setDocumentType] = useState("document");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleSave = () => {
     // Validate inputs
@@ -104,6 +115,70 @@ export function ProjectDetailsSheet({
       (member) => !teamMembers.some((m) => m.id === member.id)
     );
     setTeamMembers([...teamMembers, ...newMembers]);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+      // Auto-populate document name with filename if not set
+      if (!documentName) {
+        setDocumentName(e.target.files[0].name.split('.')[0]);
+      }
+    }
+  };
+
+  const handleDocumentUpload = () => {
+    if (!selectedFile) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un fichier",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!documentName) {
+      toast({
+        title: "Erreur",
+        description: "Le nom du document est requis",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create new document object
+    const newDocument = {
+      id: Math.random().toString(36).substring(2, 11),
+      name: documentName,
+      type: documentType,
+      filename: selectedFile.name,
+      size: selectedFile.size,
+      uploadDate: new Date(),
+      file: selectedFile, // In a real app, this would be uploaded to a storage service
+      uploadedBy: "Sophie Martin" // In a real app, this would be the current user
+    };
+
+    // Add document to the list
+    setDocuments([...documents, newDocument]);
+
+    // Reset form
+    setDocumentName("");
+    setDocumentType("document");
+    setSelectedFile(null);
+
+    // Show success toast
+    toast({
+      title: "Document ajouté",
+      description: "Le document a été ajouté avec succès",
+    });
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    setDocuments(documents.filter(doc => doc.id !== documentId));
+    toast({
+      title: "Document supprimé",
+      description: "Le document a été supprimé avec succès",
+    });
   };
 
   const getStatusColor = (status) => {
@@ -133,6 +208,27 @@ export function ProjectDetailsSheet({
         return "bg-green-500/20 text-green-700 dark:bg-green-500/20 dark:text-green-400";
       default:
         return "bg-gray-500/20 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400";
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const getDocumentIcon = (type: string) => {
+    switch (type) {
+      case "image":
+        return "📷";
+      case "pdf":
+        return "📄";
+      case "spreadsheet":
+        return "📊";
+      case "presentation":
+        return "📑";
+      default:
+        return "📝";
     }
   };
 
@@ -549,17 +645,144 @@ export function ProjectDetailsSheet({
             </TabsContent>
 
             <TabsContent value="files" className="py-4">
-              <div className="text-center p-10 text-muted-foreground">
-                <FileText className="h-10 w-10 mx-auto mb-4 opacity-30" />
-                <h3 className="text-lg font-medium">Aucun document</h3>
-                <p className="text-sm mt-1">
-                  Ajoutez des documents liés à ce projet pour les partager avec l'équipe.
-                </p>
-                <Button className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un document
-                </Button>
-              </div>
+              {documents.length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground">
+                  <FileText className="h-10 w-10 mx-auto mb-4 opacity-30" />
+                  <h3 className="text-lg font-medium">Aucun document</h3>
+                  <p className="text-sm mt-1 mb-4">
+                    Ajoutez des documents liés à ce projet pour les partager avec l'équipe.
+                  </p>
+                  <div className="space-y-4 max-w-sm mx-auto">
+                    <div className="space-y-2">
+                      <Label htmlFor="document-name">Nom du document</Label>
+                      <Input
+                        id="document-name"
+                        placeholder="Ex: Cahier des charges"
+                        value={documentName}
+                        onChange={(e) => setDocumentName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="document-type">Type de document</Label>
+                      <Select
+                        value={documentType}
+                        onValueChange={setDocumentType}
+                      >
+                        <SelectTrigger id="document-type">
+                          <SelectValue placeholder="Type de document" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="document">Document</SelectItem>
+                          <SelectItem value="image">Image</SelectItem>
+                          <SelectItem value="pdf">PDF</SelectItem>
+                          <SelectItem value="spreadsheet">Tableur</SelectItem>
+                          <SelectItem value="presentation">Présentation</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="document-file">Fichier</Label>
+                      <Input
+                        id="document-file"
+                        type="file"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                    <Button onClick={handleDocumentUpload} className="w-full">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Téléverser le document
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-medium">Documents du projet</h3>
+                    <Button variant="outline" size="sm" onClick={() => setActiveTab("files-upload")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter un document
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="p-3 border rounded-md flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="text-2xl">{getDocumentIcon(doc.type)}</div>
+                          <div>
+                            <div className="font-medium">{doc.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatFileSize(doc.size)} • Ajouté le {doc.uploadDate.toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="pt-6 border-t mt-6">
+                    <div className="space-y-4 max-w-full">
+                      <h3 className="text-sm font-medium">Ajouter un nouveau document</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="document-name">Nom du document</Label>
+                          <Input
+                            id="document-name"
+                            placeholder="Ex: Cahier des charges"
+                            value={documentName}
+                            onChange={(e) => setDocumentName(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="document-type">Type de document</Label>
+                          <Select
+                            value={documentType}
+                            onValueChange={setDocumentType}
+                          >
+                            <SelectTrigger id="document-type">
+                              <SelectValue placeholder="Type de document" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="document">Document</SelectItem>
+                              <SelectItem value="image">Image</SelectItem>
+                              <SelectItem value="pdf">PDF</SelectItem>
+                              <SelectItem value="spreadsheet">Tableur</SelectItem>
+                              <SelectItem value="presentation">Présentation</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="document-file">Fichier</Label>
+                        <Input
+                          id="document-file"
+                          type="file"
+                          onChange={handleFileChange}
+                        />
+                      </div>
+                      <Button onClick={handleDocumentUpload}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Téléverser le document
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </SheetContent>

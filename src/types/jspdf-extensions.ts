@@ -11,7 +11,7 @@ declare module "jspdf" {
     autoTableHtmlToJson: (tableElem: HTMLTableElement, delimeter?: string) => any;
     autoTableText: (text: string, x: number, y: number, styles: any) => void;
     
-    // On définit correctement l'interface pour internal
+    // Définition correcte de l'interface pour internal
     internal: {
       events: PubSub;
       scaleFactor: number;

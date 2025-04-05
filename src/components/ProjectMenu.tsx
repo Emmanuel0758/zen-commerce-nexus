@@ -27,6 +27,7 @@ export function ProjectMenu({
   onDelete,
 }: ProjectMenuProps) {
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = React.useState(false);
 
   const handleShare = () => {
     // In a real app, this would show a sharing dialog or copy a link to clipboard
@@ -45,26 +46,32 @@ export function ProjectMenu({
         });
       }
     );
+    setIsOpen(false);
+  };
+
+  const handleItemClick = (callback: () => void) => {
+    callback();
+    setIsOpen(false);
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 w-8 p-0" aria-label="Menu">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onView}>
+        <DropdownMenuItem onClick={() => handleItemClick(onView)}>
           <Eye className="mr-2 h-4 w-4" />
           <span>Voir les détails</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onEdit}>
+        <DropdownMenuItem onClick={() => handleItemClick(onEdit)}>
           <Pencil className="mr-2 h-4 w-4" />
           <span>Modifier</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onAddTask}>
+        <DropdownMenuItem onClick={() => handleItemClick(onAddTask)}>
           <Plus className="mr-2 h-4 w-4" />
           <span>Ajouter une tâche</span>
         </DropdownMenuItem>
@@ -74,7 +81,7 @@ export function ProjectMenu({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={onDelete}
+          onClick={() => handleItemClick(onDelete)}
           className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
         >
           <Trash2 className="mr-2 h-4 w-4" />

@@ -28,6 +28,7 @@ export function ProjectContextMenu({
   onDelete,
 }: ProjectContextMenuProps) {
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = React.useState(false);
 
   const handleShare = () => {
     // In a real app, this would show a sharing dialog or copy a link to clipboard
@@ -46,22 +47,28 @@ export function ProjectContextMenu({
         });
       }
     );
+    setIsOpen(false);
+  };
+
+  const handleItemClick = (callback: () => void) => {
+    callback();
+    setIsOpen(false);
   };
 
   return (
-    <ContextMenu>
+    <ContextMenu open={isOpen} onOpenChange={setIsOpen}>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
       <ContextMenuContent className="w-64">
-        <ContextMenuItem onClick={onView}>
+        <ContextMenuItem onClick={() => handleItemClick(onView)}>
           <Eye className="mr-2 h-4 w-4" />
           <span>Voir les détails</span>
         </ContextMenuItem>
-        <ContextMenuItem onClick={onEdit}>
+        <ContextMenuItem onClick={() => handleItemClick(onEdit)}>
           <Pencil className="mr-2 h-4 w-4" />
           <span>Modifier</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={onAddTask}>
+        <ContextMenuItem onClick={() => handleItemClick(onAddTask)}>
           <Plus className="mr-2 h-4 w-4" />
           <span>Ajouter une tâche</span>
         </ContextMenuItem>
@@ -71,7 +78,7 @@ export function ProjectContextMenu({
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
-          onClick={onDelete}
+          onClick={() => handleItemClick(onDelete)}
           className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
         >
           <Trash2 className="mr-2 h-4 w-4" />

@@ -101,9 +101,9 @@ export function ProductInventoryCard() {
       };
       
       const success = await exportData(
+        exportDataItems, 
         format, 
         exportFileName, 
-        exportDataItems, 
         metadata
       );
       

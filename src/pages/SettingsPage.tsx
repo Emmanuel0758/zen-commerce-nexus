@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import {
@@ -980,5 +981,770 @@ const SettingsPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="notificationSound"
+                      checked={formState.notificationSound}
+                      onCheckedChange={(checked) => handleSwitchChange("notificationSound", checked)}
+                    />
+                    <Label htmlFor="notificationSound">Sons de notification</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="desktopNotifications"
+                      checked={formState.desktopNotifications}
+                      onCheckedChange={(checked) => handleSwitchChange("desktopNotifications", checked)}
+                    />
+                    <Label htmlFor="desktopNotifications">Notifications sur le bureau</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="emailNotifications"
+                      checked={formState.emailNotifications}
+                      onCheckedChange={(checked) => handleSwitchChange("emailNotifications", checked)}
+                    />
+                    <Label htmlFor="emailNotifications">Notifications par email</Label>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Types de notifications</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch id="notification-orders" defaultChecked />
+                      <Label htmlFor="notification-orders">Nouvelles commandes</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="notification-messages" defaultChecked />
+                      <Label htmlFor="notification-messages">Nouveaux messages</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="notification-products" defaultChecked />
+                      <Label htmlFor="notification-products">Mise à jour des produits</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="notification-delivery" defaultChecked />
+                      <Label htmlFor="notification-delivery">Statut des livraisons</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="notification-payment" defaultChecked />
+                      <Label htmlFor="notification-payment">Paiements reçus</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="notification-returns" defaultChecked />
+                      <Label htmlFor="notification-returns">Demandes de retour</Label>
+                    </div>
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer les paramètres
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Sécurité */}
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sécurité</CardTitle>
+              <CardDescription>
+                Configurez les paramètres de sécurité de votre application.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <form className="space-y-6">
-                <div className="space-
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Authentification</h3>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch id="two-factor" defaultChecked />
+                    <Label htmlFor="two-factor">Authentification à deux facteurs</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch id="session-timeout" defaultChecked />
+                    <Label htmlFor="session-timeout">Déconnexion automatique après inactivité</Label>
+                  </div>
+                  
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="timeout-duration">Durée d'inactivité avant déconnexion</Label>
+                    <Select defaultValue="30">
+                      <SelectTrigger className="w-full max-w-sm">
+                        <SelectValue placeholder="Sélectionnez une durée" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 minutes</SelectItem>
+                        <SelectItem value="30">30 minutes</SelectItem>
+                        <SelectItem value="60">1 heure</SelectItem>
+                        <SelectItem value="120">2 heures</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Autorisations</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="default-role">Rôle par défaut pour les nouveaux utilisateurs</Label>
+                    <Select defaultValue="viewer">
+                      <SelectTrigger className="w-full max-w-sm">
+                        <SelectValue placeholder="Sélectionnez un rôle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrateur</SelectItem>
+                        <SelectItem value="manager">Gestionnaire</SelectItem>
+                        <SelectItem value="editor">Éditeur</SelectItem>
+                        <SelectItem value="viewer">Visiteur</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch id="ip-restriction" />
+                    <Label htmlFor="ip-restriction">Restriction par adresse IP</Label>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button type="button" variant="default">
+                    <Shield className="mr-2 h-4 w-4" />
+                    Enregistrer les paramètres de sécurité
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Avancé */}
+        <TabsContent value="advanced">
+          <Card>
+            <CardHeader>
+              <CardTitle>Paramètres avancés</CardTitle>
+              <CardDescription>
+                Configuration avancée de l'application.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Cache et performances</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch id="enable-cache" defaultChecked />
+                  <Label htmlFor="enable-cache">Activer le cache</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch id="enable-compression" defaultChecked />
+                  <Label htmlFor="enable-compression">Activer la compression des données</Label>
+                </div>
+                
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="cache-duration">Durée du cache</Label>
+                  <Select defaultValue="86400">
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez une durée" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3600">1 heure</SelectItem>
+                      <SelectItem value="21600">6 heures</SelectItem>
+                      <SelectItem value="43200">12 heures</SelectItem>
+                      <SelectItem value="86400">24 heures</SelectItem>
+                      <SelectItem value="604800">7 jours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Journalisation</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="log-level">Niveau de journalisation</Label>
+                  <Select defaultValue="info">
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez un niveau" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="error">Erreur uniquement</SelectItem>
+                      <SelectItem value="warn">Avertissements et erreurs</SelectItem>
+                      <SelectItem value="info">Informations, avertissements et erreurs</SelectItem>
+                      <SelectItem value="debug">Débogage (toutes les entrées)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch id="log-database" defaultChecked />
+                  <Label htmlFor="log-database">Journaliser les requêtes de base de données</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch id="log-api" defaultChecked />
+                  <Label htmlFor="log-api">Journaliser les appels API</Label>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Maintenance</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch id="maintenance-mode" />
+                  <Label htmlFor="maintenance-mode">Activer le mode maintenance</Label>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="maintenance-message">Message de maintenance</Label>
+                  <Textarea
+                    id="maintenance-message"
+                    placeholder="Site en maintenance. Veuillez revenir plus tard."
+                    rows={3}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between pt-6">
+                <Button type="button" variant="destructive" onClick={() => setShowResetConfirm(true)}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Réinitialiser tous les paramètres
+                </Button>
+                
+                <Button type="button">
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  Appliquer les paramètres avancés
+                </Button>
+              </div>
+              
+              {showResetConfirm && (
+                <div className="bg-destructive/10 p-4 rounded border border-destructive mt-4">
+                  <div className="flex items-start">
+                    <AlertTriangle className="h-5 w-5 text-destructive mr-2 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-destructive">Confirmer la réinitialisation</h4>
+                      <p className="text-sm mt-1">
+                        Cette action réinitialisera tous les paramètres aux valeurs par défaut et ne peut pas être annulée.
+                      </p>
+                      <div className="flex space-x-2 mt-3">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={isRestoring}
+                          onClick={handleResetSettings}
+                        >
+                          {isRestoring ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Réinitialisation...
+                            </>
+                          ) : (
+                            "Confirmer la réinitialisation"
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowResetConfirm(false)}
+                          disabled={isRestoring}
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Export & Backup */}
+        <TabsContent value="export">
+          <Card>
+            <CardHeader>
+              <CardTitle>Export & Sauvegarde</CardTitle>
+              <CardDescription>
+                Exportez vos données et configurez les sauvegardes automatiques.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Exporter les paramètres</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="export-format">Format d'exportation</Label>
+                  <Select
+                    value={exportFormat}
+                    onValueChange={(value: "json" | "pdf" | "excel") => setExportFormat(value)}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez un format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="json">JSON</SelectItem>
+                      <SelectItem value="pdf">PDF</SelectItem>
+                      <SelectItem value="excel">Excel (CSV)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button
+                  type="button"
+                  onClick={handleExportSettings}
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Exportation...
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Exporter les paramètres
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Sauvegardes automatiques</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch id="auto-backup" defaultChecked />
+                  <Label htmlFor="auto-backup">Activer les sauvegardes automatiques</Label>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="backup-frequency">Fréquence des sauvegardes</Label>
+                  <Select
+                    value={formState.backupFrequency}
+                    onValueChange={(value) => handleSelectChange("backupFrequency", value)}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez une fréquence" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Toutes les heures</SelectItem>
+                      <SelectItem value="daily">Quotidienne</SelectItem>
+                      <SelectItem value="weekly">Hebdomadaire</SelectItem>
+                      <SelectItem value="monthly">Mensuelle</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="data-retention">Conservation des données</Label>
+                  <Select
+                    value={formState.dataRetentionPeriod}
+                    onValueChange={(value) => handleSelectChange("dataRetentionPeriod", value)}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Sélectionnez une durée" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1month">1 mois</SelectItem>
+                      <SelectItem value="3months">3 mois</SelectItem>
+                      <SelectItem value="6months">6 mois</SelectItem>
+                      <SelectItem value="1year">1 an</SelectItem>
+                      <SelectItem value="forever">Indéfiniment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Importation</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="import-file">Importer depuis un fichier</Label>
+                  <Input
+                    id="import-file"
+                    type="file"
+                    accept=".json,.csv,.xlsx"
+                  />
+                </div>
+                
+                <Button type="button" variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Importer les paramètres
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet Intégrations */}
+        <TabsContent value="integration">
+          <Card>
+            <CardHeader>
+              <CardTitle>Intégrations</CardTitle>
+              <CardDescription>
+                Configurez les intégrations avec d'autres services.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Passerelles de paiement</h3>
+                
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between border p-4 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                        <div className="font-bold">PP</div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">PayPal</h4>
+                        <p className="text-sm text-gray-500">Intégration pour recevoir des paiements via PayPal</p>
+                      </div>
+                    </div>
+                    <Switch id="paypal-integration" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between border p-4 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                        <div className="font-bold">S</div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Stripe</h4>
+                        <p className="text-sm text-gray-500">Intégration pour traiter les paiements par carte</p>
+                      </div>
+                    </div>
+                    <Switch id="stripe-integration" defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between border p-4 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+                        <div className="font-bold">OM</div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Orange Money</h4>
+                        <p className="text-sm text-gray-500">Intégration pour les paiements mobile en Afrique</p>
+                      </div>
+                    </div>
+                    <Switch id="orange-money-integration" defaultChecked />
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Services de livraison</h3>
+                
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between border p-4 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600">
+                        <div className="font-bold">DHL</div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">DHL Express</h4>
+                        <p className="text-sm text-gray-500">Intégration de suivi et d'étiquettes d'expédition</p>
+                      </div>
+                    </div>
+                    <Switch id="dhl-integration" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between border p-4 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                        <div className="font-bold">GL</div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">GeoLocation</h4>
+                        <p className="text-sm text-gray-500">Intégration pour suivre les livraisons en temps réel</p>
+                      </div>
+                    </div>
+                    <Switch id="geolocation-integration" defaultChecked />
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Marketing et Analytics</h3>
+                
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between border p-4 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                        <div className="font-bold">GA</div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Google Analytics</h4>
+                        <p className="text-sm text-gray-500">Intégration pour suivre les statistiques de visite</p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="analytics-integration"
+                      checked={formState.analyticsEnabled}
+                      onCheckedChange={(checked) => handleSwitchChange("analyticsEnabled", checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between border p-4 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                        <div className="font-bold">MS</div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">MailService</h4>
+                        <p className="text-sm text-gray-500">Intégration pour l'envoi d'emails marketing</p>
+                      </div>
+                    </div>
+                    <Switch id="email-marketing-integration" defaultChecked />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end pt-4">
+                <Button type="button">
+                  <Save className="mr-2 h-4 w-4" />
+                  Enregistrer les intégrations
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet API */}
+        <TabsContent value="api">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuration de l'API</CardTitle>
+              <CardDescription>
+                Gérez l'accès à l'API et générez des clés d'API.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Clés d'API</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch id="enable-api" defaultChecked />
+                  <Label htmlFor="enable-api">Activer l'accès à l'API</Label>
+                </div>
+                
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Clé d'API principale</h4>
+                      <div className="flex items-center mt-1 space-x-2">
+                        <Input
+                          readOnly
+                          value="api_12345678abcdefgh"
+                          className="font-mono bg-background"
+                        />
+                        <Button size="icon" variant="ghost">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      Régénérer
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Autorisations d'API</h3>
+                  <Button variant="outline" size="sm">
+                    Ajouter une clé
+                  </Button>
+                </div>
+                
+                <div className="grid gap-4">
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Clé de l'application mobile</h4>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Actif</span>
+                        <Button variant="ghost" size="sm">
+                          Révoquer
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">Utilisée par l'application mobile pour se connecter</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">Créée le:</span> 01/04/2025
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Dernière utilisation:</span> Aujourd'hui
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Intégration comptable</h4>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Actif</span>
+                        <Button variant="ghost" size="sm">
+                          Révoquer
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">Utilisée pour la synchronisation avec le logiciel comptable</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">Créée le:</span> 15/03/2025
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Dernière utilisation:</span> Hier
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Documentation de l'API</h3>
+                
+                <p className="text-sm text-gray-500">
+                  Consultez notre documentation complète pour apprendre comment intégrer notre API à vos applications.
+                </p>
+                
+                <div className="flex items-center space-x-4">
+                  <Button variant="outline" onClick={() => downloadFile("api-documentation.pdf", "Documentation API")}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Télécharger la documentation
+                  </Button>
+                  
+                  <Button variant="secondary">
+                    Explorer l'API
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Onglet À propos */}
+        <TabsContent value="about">
+          <Card>
+            <CardHeader>
+              <CardTitle>À propos de l'application</CardTitle>
+              <CardDescription>
+                Informations sur la version et les licences.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex justify-center mb-6">
+                  {settings.logo ? (
+                    <img
+                      src={settings.logo}
+                      alt={settings.appName}
+                      className="h-20 object-contain"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-3xl font-bold">
+                      {settings.appName.substring(0, 1)}
+                    </div>
+                  )}
+                </div>
+                
+                <h2 className="text-2xl font-bold text-center">{settings.appName}</h2>
+                <p className="text-center text-gray-500">Plateforme de commerce en ligne</p>
+                
+                <div className="grid gap-2 mt-6">
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="font-medium">Version</span>
+                    <span>1.5.0</span>
+                  </div>
+                  
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="font-medium">Date de sortie</span>
+                    <span>5 avril 2025</span>
+                  </div>
+                  
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="font-medium">Licence</span>
+                    <span>Commercial</span>
+                  </div>
+                  
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="font-medium">Support technique</span>
+                    <span>support@zencommerce.com</span>
+                  </div>
+                </div>
+                
+                <div className="bg-muted p-4 rounded-lg mt-6">
+                  <h3 className="font-medium mb-2">Journal des modifications récentes</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start">
+                      <span className="font-semibold mr-2">v1.5.0:</span>
+                      <span>Ajout des fonctionnalités d'exportation avancées et amélioration des performances.</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="font-semibold mr-2">v1.4.2:</span>
+                      <span>Correction de bugs et améliorations de sécurité.</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="font-semibold mr-2">v1.4.0:</span>
+                      <span>Intégration avec les services de paiement mobile et optimisation pour l'Afrique.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="flex justify-center pt-4">
+                <Button variant="outline">
+                  Vérifier les mises à jour
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </Layout>
+  );
+};
+
+export default SettingsPage;

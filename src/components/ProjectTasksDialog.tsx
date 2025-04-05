@@ -147,7 +147,7 @@ export function ProjectTasksDialog({
   const { toast } = useToast();
   const [tasks, setTasks] = useState(initialTasks);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
@@ -163,7 +163,7 @@ export function ProjectTasksDialog({
     (task) =>
       (task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.description.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (statusFilter === "" || task.status === statusFilter)
+      (statusFilter === "all" || task.status === statusFilter)
   );
 
   const handleCreateTask = () => {
@@ -295,7 +295,7 @@ export function ProjectTasksDialog({
                   <SelectValue placeholder="Tous les statuts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
                   <SelectItem value="À faire">À faire</SelectItem>
                   <SelectItem value="En cours">En cours</SelectItem>
                   <SelectItem value="Terminé">Terminé</SelectItem>

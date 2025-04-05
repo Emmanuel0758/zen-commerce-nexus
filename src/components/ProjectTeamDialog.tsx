@@ -91,7 +91,7 @@ export function ProjectTeamDialog({
   const { toast } = useToast();
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState("all");
 
   const filteredMembers = teamMembers.filter(
     (member) =>
@@ -205,7 +205,7 @@ export function ProjectTeamDialog({
           <Separator />
 
           <div className="max-h-[300px] overflow-y-auto space-y-2">
-            {role
+            {role !== "all"
               ? filteredMembers
                   .filter((m) => m.role === role)
                   .map((member) => (

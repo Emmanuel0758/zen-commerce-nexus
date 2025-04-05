@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,15 +83,7 @@ export function ProductInventoryCard() {
       };
     });
     
-    return {
-      metadata: {
-        title: settings.language === 'fr' ? "Inventaire produits" : "Product inventory",
-        exportDate: new Date().toISOString(),
-        totalItems: localizedProducts.length,
-        appName: settings.appName
-      },
-      products: localizedProducts
-    };
+    return localizedProducts;
   };
 
   const exportFileName = settings.language === 'fr' ? 'inventaire-produits' : 'product-inventory';
@@ -102,7 +95,20 @@ export function ProductInventoryCard() {
         description: "Préparation du fichier..."
       });
       
-      const success = await exportData(getExportData(), format, exportFileName);
+      const exportData = getExportData();
+      const metadata = {
+        title: settings.language === 'fr' ? "Inventaire produits" : "Product inventory",
+        exportDate: new Date().toISOString(),
+        totalItems: exportData.length,
+        appName: settings.appName
+      };
+      
+      const success = await exportData(
+        format, 
+        exportFileName, 
+        exportData, 
+        metadata
+      );
       
       if (success) {
         toast({

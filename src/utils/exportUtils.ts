@@ -1,29 +1,31 @@
 
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import 'jspdf-autotable';
 
 /**
- * Exporte les données au format PDF, CSV ou JSON
- * @param data Les données à exporter
- * @param format Le format d'exportation (pdf, excel, json)
- * @param title Le titre de l'exportation
- * @returns Promise<boolean> Succès de l'exportation
+ * Exports data in different formats
+ * @param format The format to export (json, pdf, excel)
+ * @param fileName The name of the file without extension
+ * @param data The data to export
+ * @param metadata Optional metadata about the export
+ * @returns Promise resolving to true if export was successful
  */
 export const exportData = async (
+  format: "json" | "pdf" | "excel",
+  fileName: string,
   data: any[],
-  format: "pdf" | "excel" | "json",
-  title: string
+  metadata?: Record<string, any>
 ): Promise<boolean> => {
   try {
     switch (format) {
-      case "pdf":
-        return exportToPDF(data, title);
-      case "excel":
-        return exportToCSV(data, title);
       case "json":
-        return exportToJSON(data, title);
+        return exportJson(fileName, data, metadata);
+      case "pdf":
+        return exportPdf(fileName, data, metadata);
+      case "excel":
+        return exportExcel(fileName, data, metadata);
       default:
-        console.error("Format d'exportation non pris en charge");
+        console.error("Format d'export non supporté");
         return false;
     }
   } catch (error) {
@@ -33,130 +35,83 @@ export const exportData = async (
 };
 
 /**
- * Fonction utilitaire pour exporter des données
- * @param data Les données à exporter
- * @param format Le format d'exportation
- * @param title Le titre du fichier
- * @returns void
+ * Exports data as JSON
  */
-export const handleExport = async (
+const exportJson = (
+  fileName: string,
   data: any[],
-  format: "pdf" | "excel" | "json",
-  title: string
-): Promise<boolean> => {
-  return await exportData(data, format, title);
+  metadata?: Record<string, any>
+): boolean => {
+  try {
+    const exportObj = metadata ? { metadata, data } : data;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `${fileName}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de l'exportation JSON:", error);
+    return false;
+  }
 };
 
 /**
- * Exporte les données au format PDF
- * @param data Les données à exporter
- * @param title Le titre de l'exportation
- * @returns boolean Succès de l'exportation
+ * Exports data as PDF
  */
-const exportToPDF = (data: any[], title: string): boolean => {
+const exportPdf = (
+  fileName: string,
+  data: any[],
+  metadata?: Record<string, any>
+): boolean => {
   try {
-    // Si les données sont un objet complexe avec des métadonnées, extrayons le tableau
-    let tableData = Array.isArray(data) ? data : [];
+    const doc = new jsPDF();
     
-    // Si c'est un objet avec une propriété qui est un tableau (comme produits, livraisons, etc.)
-    if (!Array.isArray(data)) {
-      // Chercher la première propriété qui est un tableau
-      for (const key in data) {
-        if (Array.isArray(data[key])) {
-          tableData = data[key];
-          break;
+    // Add title and metadata if provided
+    if (metadata) {
+      doc.setFontSize(18);
+      doc.text(metadata.title || fileName, 14, 22);
+      doc.setFontSize(10);
+      
+      let yPosition = 30;
+      for (const key in metadata) {
+        if (key !== 'title') {
+          const value = typeof metadata[key] === 'string' 
+            ? metadata[key] 
+            : JSON.stringify(metadata[key]);
+          doc.text(`${key}: ${value}`, 14, yPosition);
+          yPosition += 6;
         }
       }
-    }
-    
-    // Création du document PDF
-    const doc = new jsPDF();
-    const currentDate = new Date().toLocaleDateString();
-    
-    // Ajout du titre et de la date
-    doc.setFontSize(18);
-    doc.text(title, 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(150);
-    doc.text(`Exporté le ${currentDate}`, 14, 30);
-    doc.setTextColor(0);
-    doc.setFontSize(12);
-    
-    // Preparation des données pour le tableau
-    const rows = tableData.map((item) => {
-      // Si c'est un projet
-      if (item.id && item.name && item.status) {
-        return [
-          item.id,
-          item.name,
-          item.type || "-",
-          item.status,
-          item.priority || "-",
-          `${item.progress || 0}%`,
-          item.deadline ? new Date(item.deadline).toLocaleDateString() : "-",
-          item.assignedTo || "-",
-        ];
+      
+      yPosition += 10;
+      
+      // Convert data to table format for autotable
+      if (data.length > 0) {
+        const firstItem = data[0];
+        const headers = Object.keys(firstItem);
+        const rows = data.map(item => headers.map(header => item[header]));
+        
+        // @ts-ignore - jspdf-autotable functionality
+        doc.autoTable({
+          head: [headers],
+          body: rows,
+          startY: yPosition,
+          theme: 'grid',
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [66, 66, 66] }
+        });
+      } else {
+        doc.text("No data available", 14, yPosition);
       }
-      // Si c'est un autre type de données, retourner les valeurs de l'objet
-      return Object.values(item);
-    });
-    
-    // Définition des entêtes du tableau
-    let headers;
-    
-    // Si c'est un projet
-    if (tableData[0]?.id && tableData[0]?.name && tableData[0]?.status) {
-      headers = [
-        "ID", 
-        "Nom", 
-        "Type", 
-        "Statut", 
-        "Priorité", 
-        "Progression", 
-        "Échéance", 
-        "Assigné à"
-      ];
     } else {
-      // Sinon, utiliser les clés de l'objet comme entêtes
-      headers = Object.keys(tableData[0] || {});
+      // Simple text export for non-tabular data
+      doc.text(JSON.stringify(data, null, 2), 10, 10);
     }
     
-    // Configuration et création du tableau
-    doc.autoTable({
-      head: [headers],
-      body: rows,
-      startY: 40,
-      margin: { top: 40 },
-      styles: {
-        fontSize: 10,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: "bold",
-      },
-      alternateRowStyles: {
-        fillColor: [240, 240, 240],
-      },
-    });
-    
-    // Numérotation des pages
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(10);
-      doc.setTextColor(150);
-      doc.text(
-        `Page ${i} sur ${totalPages}`,
-        doc.internal.pageSize.getWidth() / 2,
-        doc.internal.pageSize.getHeight() - 10,
-        { align: "center" }
-      );
-    }
-    
-    // Téléchargement du fichier
-    doc.save(`${title.toLowerCase().replace(/\s+/g, "_")}_${currentDate.replace(/\//g, "-")}.pdf`);
+    doc.save(`${fileName}.pdf`);
     return true;
   } catch (error) {
     console.error("Erreur lors de l'exportation PDF:", error);
@@ -165,120 +120,58 @@ const exportToPDF = (data: any[], title: string): boolean => {
 };
 
 /**
- * Exporte les données au format CSV
- * @param data Les données à exporter
- * @param title Le titre de l'exportation
- * @returns boolean Succès de l'exportation
+ * Exports data as Excel (CSV)
  */
-const exportToCSV = (data: any[], title: string): boolean => {
+const exportExcel = (
+  fileName: string,
+  data: any[],
+  metadata?: Record<string, any>
+): boolean => {
   try {
-    // Si les données sont un objet complexe avec des métadonnées, extrayons le tableau
-    let tableData = Array.isArray(data) ? data : [];
+    if (data.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return false;
+    }
     
-    // Si c'est un objet avec une propriété qui est un tableau (comme produits, livraisons, etc.)
-    if (!Array.isArray(data)) {
-      // Chercher la première propriété qui est un tableau
-      for (const key in data) {
-        if (Array.isArray(data[key])) {
-          tableData = data[key];
-          break;
+    // Get headers from the first data item
+    const headers = Object.keys(data[0]);
+    
+    // Create CSV content
+    let csvContent = headers.join(",") + "\n";
+    
+    data.forEach(item => {
+      const row = headers.map(header => {
+        const value = item[header];
+        // Handle CSV special characters and ensure proper quoting
+        if (value === null || value === undefined) {
+          return '""';
         }
-      }
-    }
-    
-    // Préparation des entêtes du tableau
-    let headers;
-    
-    // Si c'est un projet
-    if (tableData[0]?.id && tableData[0]?.name && tableData[0]?.status) {
-      headers = [
-        "ID", 
-        "Nom", 
-        "Type", 
-        "Statut", 
-        "Priorité", 
-        "Progression", 
-        "Échéance", 
-        "Assigné à"
-      ];
-    } else {
-      // Sinon, utiliser les clés de l'objet comme entêtes
-      headers = Object.keys(tableData[0] || {});
-    }
-    
-    // Préparation des lignes du tableau
-    const rows = tableData.map((item) => {
-      // Si c'est un projet
-      if (item.id && item.name && item.status) {
-        return [
-          item.id,
-          item.name,
-          item.type || "",
-          item.status,
-          item.priority || "",
-          `${item.progress || 0}%`,
-          item.deadline ? new Date(item.deadline).toLocaleDateString() : "",
-          item.assignedTo || "",
-        ];
-      }
-      // Sinon, utiliser les valeurs de l'objet
-      return Object.values(item);
+        const stringValue = String(value).replace(/"/g, '""');
+        return `"${stringValue}"`;
+      });
+      csvContent += row.join(",") + "\n";
     });
     
-    // Construction du contenu CSV
-    let csvContent = headers.join(";") + "\n";
+    // Add metadata as commented header if provided
+    if (metadata) {
+      const metadataContent = Object.entries(metadata)
+        .map(([key, value]) => `# ${key}: ${value}`)
+        .join("\n");
+      csvContent = metadataContent + "\n\n" + csvContent;
+    }
     
-    rows.forEach((row) => {
-      csvContent += row.join(";") + "\n";
-    });
-    
-    // Création et téléchargement du fichier
-    const currentDate = new Date().toLocaleDateString().replace(/\//g, "-");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    // Create file download
+    const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${title.toLowerCase().replace(/\s+/g, "_")}_${currentDate}.csv`);
-    link.style.visibility = "hidden";
-    
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${fileName}.csv`);
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
     
     return true;
   } catch (error) {
-    console.error("Erreur lors de l'exportation CSV:", error);
-    return false;
-  }
-};
-
-/**
- * Exporte les données au format JSON
- * @param data Les données à exporter
- * @param title Le titre de l'exportation
- * @returns boolean Succès de l'exportation
- */
-const exportToJSON = (data: any[], title: string): boolean => {
-  try {
-    // Création du fichier JSON
-    const jsonContent = JSON.stringify(data, null, 2);
-    const currentDate = new Date().toLocaleDateString().replace(/\//g, "-");
-    const blob = new Blob([jsonContent], { type: "application/json;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${title.toLowerCase().replace(/\s+/g, "_")}_${currentDate}.json`);
-    link.style.visibility = "hidden";
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    return true;
-  } catch (error) {
-    console.error("Erreur lors de l'exportation JSON:", error);
+    console.error("Erreur lors de l'exportation Excel (CSV):", error);
     return false;
   }
 };

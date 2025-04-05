@@ -1,12 +1,18 @@
 
 import { jsPDF } from "jspdf";
-import { PubSub } from "@/types";
 
+// Types étendus pour jsPDF
 declare module "jspdf" {
   interface jsPDF {
-    // Add extensions to jsPDF type
+    // Extension pour autoTable
     autoTable: any;
-    setTextColor: (ch1: string | number, ch2?: number, ch3?: number, ch4?: number) => jsPDF;
+    
+    // Méthode lastAutoTable ajoutée par le plugin autoTable
+    lastAutoTable: {
+      finalY: number;
+    };
+    
+    // Propriétés internes
     internal: {
       events: any;
       scaleFactor: number;

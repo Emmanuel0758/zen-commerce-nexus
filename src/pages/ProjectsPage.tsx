@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Plus, Calendar, KanbanSquare, ClipboardList, Clock, Users,
   ChevronDown, Search, Download, FileText, ArrowUpDown, MoreHorizontal,
-  Trash, Pencil, Check, Filter, Eye, Share
+  Trash, Pencil, Check, FilterIcon, Eye, Share
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -73,8 +73,8 @@ export default function ProjectsPage() {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [editMode, setEditMode] = useState(false);
   const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
   const [projects, setProjects] = useState([
@@ -248,7 +248,7 @@ export default function ProjectsPage() {
       startDate: new Date().toISOString().split("T")[0],
     };
 
-    setProjects([...projects, createdProject]);
+    setProjects((prevProjects) => [...prevProjects, createdProject]);
     setNewProjectDialogOpen(false);
     setNewProject({
       name: "",
@@ -269,6 +269,12 @@ export default function ProjectsPage() {
       title: "Projet créé",
       description: `Le projet "${createdProject.name}" a été créé avec succès.`,
     });
+    
+    const currentView = view;
+    setView("list");
+    setTimeout(() => {
+      setView(currentView);
+    }, 100);
   };
 
   const handleViewProjectDetails = (project) => {
@@ -500,10 +506,10 @@ export default function ProjectsPage() {
               </Select>
               <Button variant="outline" size="icon" onClick={() => {
                 setSearchTerm("");
-                setStatusFilter("");
-                setTypeFilter("");
+                setStatusFilter("all");
+                setTypeFilter("all");
               }}>
-                <Filter className="h-4 w-4" />
+                <FilterIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>

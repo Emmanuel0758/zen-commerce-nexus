@@ -321,232 +321,235 @@ export default function ProjectsPage() {
             </div>
           </div>
 
-          <TabsContent value="list" className="m-0">
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-24">ID</TableHead>
-                      <TableHead>Projet</TableHead>
-                      <TableHead className="hidden md:table-cell">Type</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="hidden md:table-cell">Priorité</TableHead>
-                      <TableHead className="hidden lg:table-cell">Progression</TableHead>
-                      <TableHead className="hidden lg:table-cell">Échéance</TableHead>
-                      <TableHead className="hidden xl:table-cell">Assigné à</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {projects.map((project) => (
-                      <TableRow key={project.id}>
-                        <TableCell className="font-medium">{project.id}</TableCell>
-                        <TableCell>
-                          <div className="font-medium">{project.name}</div>
-                          <div className="hidden md:block text-sm text-muted-foreground">
-                            {project.tasks.completed}/{project.tasks.total} tâches
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{project.type}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={getStatusColor(project.status)}>
-                            {project.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Badge variant="outline" className={getPriorityColor(project.priority)}>
-                            {project.priority}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+          {/* Wrapping all TabsContent components within a Tabs component */}
+          <Tabs value={view} onValueChange={setView}>
+            <TabsContent value="list" className="m-0">
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-24">ID</TableHead>
+                        <TableHead>Projet</TableHead>
+                        <TableHead className="hidden md:table-cell">Type</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead className="hidden md:table-cell">Priorité</TableHead>
+                        <TableHead className="hidden lg:table-cell">Progression</TableHead>
+                        <TableHead className="hidden lg:table-cell">Échéance</TableHead>
+                        <TableHead className="hidden xl:table-cell">Assigné à</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {projects.map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell className="font-medium">{project.id}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{project.name}</div>
+                            <div className="hidden md:block text-sm text-muted-foreground">
+                              {project.tasks.completed}/{project.tasks.total} tâches
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">{project.type}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={getStatusColor(project.status)}>
+                              {project.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <Badge variant="outline" className={getPriorityColor(project.priority)}>
+                              {project.priority}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                              <div 
+                                className="bg-primary h-2.5 rounded-full" 
+                                style={{ width: `${project.progress}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-xs text-right mt-1">{project.progress}%</div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {new Date(project.deadline).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="hidden xl:table-cell">{project.assignedTo}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem>Voir les détails</DropdownMenuItem>
+                                <DropdownMenuItem>Modifier</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>Voir les tâches</DropdownMenuItem>
+                                <DropdownMenuItem>Ajouter une tâche</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>Archiver</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="kanban" className="m-0">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2 bg-blue-100/30 dark:bg-blue-900/30">
+                    <CardTitle className="text-sm font-medium flex justify-between items-center">
+                      <span>Planifié</span>
+                      <Badge variant="outline">{projects.filter(p => p.status === "Planifié").length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 space-y-3">
+                    {projects.filter(p => p.status === "Planifié").map((project) => (
+                      <Card key={project.id} className="p-3 hover:bg-accent cursor-pointer transition-colors">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium text-sm">{project.name}</h3>
+                          <Badge variant="outline" className={getPriorityColor(project.priority)}>{project.priority}</Badge>
+                        </div>
+                        <div className="flex items-center mt-2 text-xs text-muted-foreground">
+                          <ClipboardList className="h-3 w-3 mr-1" />
+                          <span>{project.tasks.completed}/{project.tasks.total}</span>
+                          <Separator orientation="vertical" className="h-3 mx-2" />
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{new Date(project.deadline).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                             <div 
-                              className="bg-primary h-2.5 rounded-full" 
+                              className="bg-primary h-1.5 rounded-full" 
                               style={{ width: `${project.progress}%` }}
                             ></div>
                           </div>
-                          <div className="text-xs text-right mt-1">{project.progress}%</div>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          {new Date(project.deadline).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="hidden xl:table-cell">{project.assignedTo}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                              <DropdownMenuItem>Modifier</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem>Voir les tâches</DropdownMenuItem>
-                              <DropdownMenuItem>Ajouter une tâche</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem>Archiver</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
+                          <span className="text-xs ml-2">{project.progress}%</span>
+                        </div>
+                      </Card>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter un projet
+                    </Button>
+                  </CardContent>
+                </Card>
 
-          <TabsContent value="kanban" className="m-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-2 bg-blue-100/30 dark:bg-blue-900/30">
-                  <CardTitle className="text-sm font-medium flex justify-between items-center">
-                    <span>Planifié</span>
-                    <Badge variant="outline">{projects.filter(p => p.status === "Planifié").length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 space-y-3">
-                  {projects.filter(p => p.status === "Planifié").map((project) => (
-                    <Card key={project.id} className="p-3 hover:bg-accent cursor-pointer transition-colors">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-sm">{project.name}</h3>
-                        <Badge variant="outline" className={getPriorityColor(project.priority)}>{project.priority}</Badge>
-                      </div>
-                      <div className="flex items-center mt-2 text-xs text-muted-foreground">
-                        <ClipboardList className="h-3 w-3 mr-1" />
-                        <span>{project.tasks.completed}/{project.tasks.total}</span>
-                        <Separator orientation="vertical" className="h-3 mx-2" />
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>{new Date(project.deadline).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center mt-2">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                          <div 
-                            className="bg-primary h-1.5 rounded-full" 
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
+                <Card>
+                  <CardHeader className="pb-2 bg-yellow-100/30 dark:bg-yellow-900/30">
+                    <CardTitle className="text-sm font-medium flex justify-between items-center">
+                      <span>En cours</span>
+                      <Badge variant="outline">{projects.filter(p => p.status === "En cours").length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 space-y-3">
+                    {projects.filter(p => p.status === "En cours").map((project) => (
+                      <Card key={project.id} className="p-3 hover:bg-accent cursor-pointer transition-colors">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium text-sm">{project.name}</h3>
+                          <Badge variant="outline" className={getPriorityColor(project.priority)}>{project.priority}</Badge>
                         </div>
-                        <span className="text-xs ml-2">{project.progress}%</span>
-                      </div>
-                    </Card>
-                  ))}
-                  <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter un projet
-                  </Button>
+                        <div className="flex items-center mt-2 text-xs text-muted-foreground">
+                          <ClipboardList className="h-3 w-3 mr-1" />
+                          <span>{project.tasks.completed}/{project.tasks.total}</span>
+                          <Separator orientation="vertical" className="h-3 mx-2" />
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{new Date(project.deadline).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                            <div 
+                              className="bg-primary h-1.5 rounded-full" 
+                              style={{ width: `${project.progress}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs ml-2">{project.progress}%</span>
+                        </div>
+                      </Card>
+                    ))}
+                    <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter un projet
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2 bg-green-100/30 dark:bg-green-900/30">
+                    <CardTitle className="text-sm font-medium flex justify-between items-center">
+                      <span>Terminé</span>
+                      <Badge variant="outline">{projects.filter(p => p.status === "Terminé").length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 space-y-3">
+                    {projects.filter(p => p.status === "Terminé").map((project) => (
+                      <Card key={project.id} className="p-3 hover:bg-accent cursor-pointer transition-colors">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium text-sm">{project.name}</h3>
+                          <Badge variant="outline" className={getPriorityColor(project.priority)}>{project.priority}</Badge>
+                        </div>
+                        <div className="flex items-center mt-2 text-xs text-muted-foreground">
+                          <ClipboardList className="h-3 w-3 mr-1" />
+                          <span>{project.tasks.completed}/{project.tasks.total}</span>
+                          <Separator orientation="vertical" className="h-3 mx-2" />
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{new Date(project.deadline).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                            <div 
+                              className="bg-primary h-1.5 rounded-full" 
+                              style={{ width: `${project.progress}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs ml-2">{project.progress}%</span>
+                        </div>
+                      </Card>
+                    ))}
+                    <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter un projet
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="calendar" className="m-0">
+              <Card className="border-none">
+                <CardContent className="p-6">
+                  <div className="text-center py-10">
+                    <Calendar className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium">Vue calendrier</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      La vue calendrier sera bientôt disponible
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
+            </TabsContent>
 
-              <Card>
-                <CardHeader className="pb-2 bg-yellow-100/30 dark:bg-yellow-900/30">
-                  <CardTitle className="text-sm font-medium flex justify-between items-center">
-                    <span>En cours</span>
-                    <Badge variant="outline">{projects.filter(p => p.status === "En cours").length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 space-y-3">
-                  {projects.filter(p => p.status === "En cours").map((project) => (
-                    <Card key={project.id} className="p-3 hover:bg-accent cursor-pointer transition-colors">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-sm">{project.name}</h3>
-                        <Badge variant="outline" className={getPriorityColor(project.priority)}>{project.priority}</Badge>
-                      </div>
-                      <div className="flex items-center mt-2 text-xs text-muted-foreground">
-                        <ClipboardList className="h-3 w-3 mr-1" />
-                        <span>{project.tasks.completed}/{project.tasks.total}</span>
-                        <Separator orientation="vertical" className="h-3 mx-2" />
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>{new Date(project.deadline).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center mt-2">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                          <div 
-                            className="bg-primary h-1.5 rounded-full" 
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs ml-2">{project.progress}%</span>
-                      </div>
-                    </Card>
-                  ))}
-                  <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter un projet
-                  </Button>
+            <TabsContent value="timeline" className="m-0">
+              <Card className="border-none">
+                <CardContent className="p-6">
+                  <div className="text-center py-10">
+                    <Clock className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-medium">Vue chronologique</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      La vue chronologique sera bientôt disponible
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader className="pb-2 bg-green-100/30 dark:bg-green-900/30">
-                  <CardTitle className="text-sm font-medium flex justify-between items-center">
-                    <span>Terminé</span>
-                    <Badge variant="outline">{projects.filter(p => p.status === "Terminé").length}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 space-y-3">
-                  {projects.filter(p => p.status === "Terminé").map((project) => (
-                    <Card key={project.id} className="p-3 hover:bg-accent cursor-pointer transition-colors">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-sm">{project.name}</h3>
-                        <Badge variant="outline" className={getPriorityColor(project.priority)}>{project.priority}</Badge>
-                      </div>
-                      <div className="flex items-center mt-2 text-xs text-muted-foreground">
-                        <ClipboardList className="h-3 w-3 mr-1" />
-                        <span>{project.tasks.completed}/{project.tasks.total}</span>
-                        <Separator orientation="vertical" className="h-3 mx-2" />
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>{new Date(project.deadline).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center mt-2">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                          <div 
-                            className="bg-primary h-1.5 rounded-full" 
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs ml-2">{project.progress}%</span>
-                      </div>
-                    </Card>
-                  ))}
-                  <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter un projet
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="calendar" className="m-0">
-            <Card className="border-none">
-              <CardContent className="p-6">
-                <div className="text-center py-10">
-                  <Calendar className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-medium">Vue calendrier</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    La vue calendrier sera bientôt disponible
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="timeline" className="m-0">
-            <Card className="border-none">
-              <CardContent className="p-6">
-                <div className="text-center py-10">
-                  <Clock className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-medium">Vue chronologique</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    La vue chronologique sera bientôt disponible
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </Layout>

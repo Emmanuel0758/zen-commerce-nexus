@@ -1,14 +1,14 @@
 
-import { jsPDF } from "jspdf";
+import { PubSub } from "pubsub-js";
 
 declare module "jspdf" {
   interface jsPDF {
-    lastAutoTable: {
-      finalY: number;
-    };
-    autoTable: (options: any) => void;
+    autoTable: (options: any) => jsPDF;
+    setFontSize: (size: number) => jsPDF;
+    setFont: (fontName: string, fontStyle?: string) => jsPDF;
+    setTextColor: (r: number, g: number, b: number) => jsPDF;
     internal: {
-      events: any;
+      events: PubSub;
       scaleFactor: number;
       pageSize: {
         width: number;
@@ -18,7 +18,7 @@ declare module "jspdf" {
       };
       pages: number[];
       getNumberOfPages: () => number;
-      getEncryptor(objectId: number): (data: string) => string;
+      getEncryptor: (objectId: number) => (data: string) => string;
     };
   }
 }

@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Eye, Pencil, Share, Plus, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Share, Plus, Trash2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProjectMenuProps {

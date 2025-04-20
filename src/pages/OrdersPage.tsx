@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Download, FileDown, Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import { useAppSettings } from "@/hooks/use-app-settings";
@@ -857,4 +858,119 @@ export default function OrdersPage() {
                 />
               </div>
 
-              <div className="space-
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-md font-medium">Articles</h3>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleAddProductField}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter un article
+                  </Button>
+                </div>
+                
+                {form.getValues().items.map((_, index) => (
+                  <div key={index} className="flex gap-4 items-end">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.product`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Produit</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner un produit" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {demoProducts.map(product => (
+                                <SelectItem key={product.id} value={product.id}>
+                                  {product.name} - {product.price.toLocaleString('fr-FR')} FCFA
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem className="w-28">
+                          <FormLabel>Quantité</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              {...field} 
+                              onChange={e => field.onChange(parseInt(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {form.getValues().items.length > 1 && (
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-500 hover:text-red-700 mb-1"
+                        onClick={() => handleRemoveProductField(index)}
+                      >
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="shippingAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse de livraison</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="submit">Créer la commande</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

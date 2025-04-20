@@ -310,116 +310,102 @@ export default function OrdersPage() {
         total: '14 995 CFA'
       });
     }
-    
-    const invoiceData = [
-      {
-        id: order.id,
-        customer: order.customer,
-        date: order.date,
-        items: invoiceItems,
-        total: order.total,
-        status: order.status
-      }
-    ];
-    
-    const metadata = {
-      title: `Facture N° ${order.id.replace('ZEN-', 'INV-')}`,
-      customer: order.customer,
-      customerEmail: 'client@example.com',
-      invoiceDate: order.date,
-      dueDate: order.date,
-      invoiceType: 'detailed'
-    };
-    
+
     try {
-      const success = await exportData(invoiceData, "pdf", `facture-${order.id}`, metadata);
-      if (!success) {
-        // Si l'export PDF échoue, on essaie en DOCX
-        const { Document, Paragraph, Table, TableRow, TableCell, TextRun } = await import('docx');
-        
-        const doc = new Document({
-          sections: [{
-            properties: {},
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: metadata.title,
-                    bold: true,
-                    size: 32
-                  })
-                ]
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({ text: `Client: ${metadata.customer}`, size: 24 })
-                ]
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({ text: `Date: ${metadata.invoiceDate}`, size: 24 })
-                ]
-              }),
-              new Table({
-                rows: [
+      const { Document, Paragraph, Table, TableRow, TableCell, TextRun, Packer } = await import('docx');
+      
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Facture N° ${order.id.replace('ZEN-', 'INV-')}`,
+                  bold: true,
+                  size: 32
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Client: ${order.customer}`, size: 24 })
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Date: ${order.date}`, size: 24 })
+              ]
+            }),
+            new Table({
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph({ text: "Description" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Quantité" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Prix unitaire" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Total" })] })
+                  ]
+                }),
+                ...invoiceItems.map(item => 
                   new TableRow({
                     children: [
-                      new TableCell({ children: [new Paragraph({ text: "Description" })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Quantité" })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Prix unitaire" })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Total" })] })
+                      new TableCell({ children: [new Paragraph({ text: item.description })] }),
+                      new TableCell({ children: [new Paragraph({ text: item.quantity.toString() })] }),
+                      new TableCell({ children: [new Paragraph({ text: item.unitPrice })] }),
+                      new TableCell({ children: [new Paragraph({ text: item.total })] })
                     ]
-                  }),
-                  ...invoiceItems.map(item => 
-                    new TableRow({
-                      children: [
-                        new TableCell({ children: [new Paragraph({ text: item.description })] }),
-                        new TableCell({ children: [new Paragraph({ text: item.quantity.toString() })] }),
-                        new TableCell({ children: [new Paragraph({ text: item.unitPrice })] }),
-                        new TableCell({ children: [new Paragraph({ text: item.total })] })
-                      ]
-                    })
-                  )
-                ]
-              }),
-              new Paragraph({
-                children: [
-                  new TextRun({ text: `Total: ${order.total}`, bold: true, size: 28 })
-                ]
-              })
-            ]
-          }]
-        });
+                  })
+                )
+              ]
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Total: ${order.total}`, bold: true, size: 28 })
+              ]
+            })
+          ]
+        }]
+      });
 
-        // Générer et télécharger le fichier DOCX
-        const blob = await Packer.toBlob(doc);
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `facture-${order.id}.docx`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+      // Générer et télécharger le fichier DOCX
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `facture-${order.id}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
 
-        toast({
-          title: "Facture téléchargée",
-          description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format DOCX`
-        });
-      } else {
-        toast({
-          title: "Facture téléchargée",
-          description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format PDF`
-        });
-      }
+      toast({
+        title: "Facture téléchargée",
+        description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format DOCX`
+      });
       setIsInvoiceDialogOpen(false);
     } catch (error) {
       console.error("Erreur lors du téléchargement de la facture:", error);
+      // Si le DOCX échoue, on essaie en Excel (CSV)
+      const csvContent = "data:text/csv;charset=utf-8," + 
+        "Description,Quantité,Prix unitaire,Total\n" +
+        invoiceItems.map(item => 
+          `${item.description},${item.quantity},${item.unitPrice},${item.total}`
+        ).join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `facture-${order.id}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
       toast({
-        title: "Erreur de téléchargement",
-        description: "Une erreur est survenue lors du téléchargement de la facture",
-        variant: "destructive"
+        title: "Facture téléchargée",
+        description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format CSV`
       });
+      setIsInvoiceDialogOpen(false);
     }
   };
 

@@ -51,6 +51,7 @@ import "@/types/jspdf-extensions";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { exportData } from "@/utils/exportUtils";
 
 type Order = {
   id: string;
@@ -128,7 +129,6 @@ const demoOrders: Order[] = [
   },
 ];
 
-// Schema de validation pour le formulaire de nouvelle commande
 const newOrderSchema = z.object({
   customer: z.string().min(3, { message: "Le nom du client est requis (min. 3 caractères)" }),
   items: z.array(z.object({
@@ -144,7 +144,6 @@ const newOrderSchema = z.object({
 
 type NewOrderFormValues = z.infer<typeof newOrderSchema>;
 
-// Produits de démonstration
 const demoProducts = [
   { id: "prod-1", name: "Zen Classic (500ml)", price: 9999 },
   { id: "prod-2", name: "Zen Boost (250ml)", price: 7250 },
@@ -165,7 +164,6 @@ export default function OrdersPage() {
 
   const { toast } = useToast();
   
-  // Formulaire pour nouvelle commande
   const form = useForm<NewOrderFormValues>({
     resolver: zodResolver(newOrderSchema),
     defaultValues: {
@@ -202,137 +200,36 @@ export default function OrdersPage() {
     setIsInvoiceDialogOpen(true);
   };
 
-  const handleExportOrders = (format: "json" | "pdf" | "excel") => {
-    if (format === "json") {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(orders, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "zen-orders.json");
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-    } 
-    else if (format === "pdf") {
-      const doc = new jsPDF();
-      
-      if (settings.logo) {
-        try {
-          doc.addImage(settings.logo, 'JPEG', 15, 10, 30, 30);
-        } catch (error) {
-          console.error("Erreur lors du chargement du logo:", error);
-          doc.setFontSize(22);
-          doc.setTextColor(128, 0, 128);
-          doc.text(settings.appName.substring(0, 1), 25, 25);
-        }
-      }
-      
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text(settings.appName.toUpperCase(), settings.logo ? 50 : 15, 25);
-      
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text('123 Avenue du Commerce', settings.logo ? 50 : 15, 32);
-      doc.text('75001 Paris, France', settings.logo ? 50 : 15, 37);
-      doc.text('contact@zenbeverages.com', settings.logo ? 50 : 15, 42);
-      
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('LISTE DES COMMANDES', 105, 55, { align: 'center' });
-      
-      doc.setFontSize(11);
-      doc.text(`Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`, 105, 62, { align: 'center' });
-      
-      const headers = [["Commande", "Client", "Date", "Articles", "Total", "Statut"]];
-      
-      const data = orders.map(order => {
-        const status = 
-          order.status === "completed" ? "Terminée" : 
-          order.status === "processing" ? "En traitement" : 
-          order.status === "pending" ? "En attente" : 
-          order.status === "cancelled" ? "Annulée" : "En attente de validation";
-        
-        return [
-          order.id,
-          order.customer,
-          order.date,
-          order.items.toString(),
-          order.total,
-          status
-        ];
-      });
-      
-      // @ts-ignore
-      doc.autoTable({
-        startY: 70,
-        head: headers,
-        body: data,
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-        styles: { 
-          fontSize: 9,
-          cellPadding: 3,
-        },
-        columnStyles: {
-          0: { cellWidth: 25 },
-          1: { cellWidth: 40 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 15, halign: 'center' },
-          4: { cellWidth: 35, halign: 'right' },
-          5: { cellWidth: 30 }
-        }
-      });
-      
-      const finalY = (doc.lastAutoTable as any).finalY;
-      
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Total commandes: ${orders.length}`, 15, finalY + 15);
-      doc.text(`En attente: ${pendingCount}`, 15, finalY + 22);
-      doc.text(`En traitement: ${processingCount}`, 15, finalY + 29);
-      doc.text(`Terminées: ${completedCount}`, 15, finalY + 36);
-      doc.text(`Annulées/En attente: ${cancelledCount + onHoldCount}`, 15, finalY + 43);
-      
-      const pageCount = doc.internal.getNumberOfPages();
-      for(let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${settings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
-      }
-      
-      doc.save(`liste-commandes.pdf`);
-    } 
-    else if (format === "excel") {
-      let csvContent = "ID,Client,Date,Articles,Total,Statut\n";
-      
-      orders.forEach(order => {
-        const status = order.status === "completed" ? "Terminée" : 
-                      order.status === "processing" ? "En traitement" : 
-                      order.status === "pending" ? "En attente" : 
-                      order.status === "cancelled" ? "Annulée" : "En attente de validation";
-                      
-        csvContent += `${order.id},${order.customer},${order.date},${order.items},${order.total},${status}\n`;
-      });
-      
-      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "zen-orders.csv");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    }
+  const handleExportOrders = (format: "pdf" | "excel") => {
+    const fileName = "liste-commandes";
+    const metadata = {
+      title: "Liste des Commandes",
+      totalOrders: orders.length,
+      pendingCount,
+      processingCount,
+      completedCount,
+      cancelledCount,
+      onHoldCount
+    };
     
-    toast({
-      title: "Export réussi",
-      description: `La liste des commandes a été exportée en format ${format.toUpperCase()}`
-    });
+    exportData(orders, format, fileName, metadata)
+      .then(success => {
+        if (success) {
+          toast({
+            title: "Export réussi",
+            description: `La liste des commandes a été exportée en format ${format.toUpperCase()}`
+          });
+        } else {
+          toast({
+            title: "Erreur d'export",
+            description: "Une erreur est survenue lors de l'exportation",
+            variant: "destructive"
+          });
+        }
+      });
   };
 
-  // Fonction de création d'une nouvelle commande
   const handleCreateNewOrder = (data: NewOrderFormValues) => {
-    // Calcul du total
     let totalAmount = 0;
     let itemCount = 0;
     
@@ -344,21 +241,17 @@ export default function OrdersPage() {
       }
     });
     
-    // Formatage du total
     const totalFormatted = `${totalAmount.toLocaleString('fr-FR')} FCFA`;
     
-    // Création de l'ID
     const orderNumber = 1050 + orders.length;
     const orderId = `ZEN-${orderNumber}`;
     
-    // Date du jour au format français
     const today = new Date().toLocaleDateString('fr-FR', { 
       day: '2-digit', 
       month: '2-digit', 
       year: 'numeric' 
     });
     
-    // Création de la nouvelle commande
     const newOrder: Order = {
       id: orderId,
       customer: data.customer,
@@ -368,16 +261,12 @@ export default function OrdersPage() {
       status: data.status,
     };
     
-    // Ajout de la commande à la liste
     setOrders([newOrder, ...orders]);
     
-    // Réinitialisation du formulaire
     form.reset();
     
-    // Fermer le dialogue
     setIsNewOrderDialogOpen(false);
     
-    // Message de succès
     toast({
       title: "Commande créée",
       description: `La commande ${orderId} a été créée avec succès.`
@@ -397,106 +286,69 @@ export default function OrdersPage() {
   };
 
   const handleDownloadInvoice = (order: Order) => {
-    const doc = new jsPDF();
+    const invoiceItems = [
+      {
+        description: 'Zen Classic (500ml)',
+        quantity: 2,
+        unitPrice: '9 999 CFA',
+        total: '19 998 CFA'
+      }
+    ];
     
-    // Get app settings
-    const appSettingsStr = localStorage.getItem('appSettings');
-    const appSettings = appSettingsStr ? JSON.parse(appSettingsStr) : {
-      appName: 'Zen Commerce',
-      logo: null,
-      currency: 'CFA'
+    if (order.items > 1) {
+      invoiceItems.push({
+        description: 'Zen Boost (250ml)',
+        quantity: 1,
+        unitPrice: '7 250 CFA',
+        total: '7 250 CFA'
+      });
+    }
+    
+    if (order.items > 2) {
+      invoiceItems.push({
+        description: 'Zen Relax (1L)',
+        quantity: 1,
+        unitPrice: '14 995 CFA',
+        total: '14 995 CFA'
+      });
+    }
+    
+    const invoiceData = [
+      {
+        id: order.id,
+        customer: order.customer,
+        date: order.date,
+        items: invoiceItems,
+        total: order.total,
+        status: order.status
+      }
+    ];
+    
+    const metadata = {
+      title: `Facture N° ${order.id.replace('ZEN-', 'INV-')}`,
+      customer: order.customer,
+      customerEmail: 'client@example.com',
+      invoiceDate: order.date,
+      dueDate: order.date,
+      invoiceType: 'detailed'
     };
     
-    // Add header with company logo or text
-    if (appSettings.logo) {
-      try {
-        doc.addImage(appSettings.logo, 'JPEG', 15, 10, 30, 30);
-      } catch (error) {
-        console.error("Erreur lors du chargement du logo:", error);
-        doc.setFontSize(22);
-        doc.setTextColor(139, 92, 246);
-        doc.text(appSettings.appName.substring(0, 1), 25, 25);
-      }
-    }
-    
-    // Company name and details
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text(appSettings.appName.toUpperCase(), appSettings.logo ? 50 : 15, 25);
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('123 Avenue du Commerce', appSettings.logo ? 50 : 15, 32);
-    doc.text('Abidjan, Côte d\'Ivoire', appSettings.logo ? 50 : 15, 37);
-    doc.text('contact@' + appSettings.appName.toLowerCase().replace(/\s/g, '') + '.com', appSettings.logo ? 50 : 15, 42);
-    
-    // Invoice title and number
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('FACTURE', 105, 55, { align: 'center' });
-    
-    doc.setFontSize(11);
-    doc.text(`N° ${order.id.replace('ZEN-', 'INV-')}`, 105, 62, { align: 'center' });
-    doc.text(`Date: ${order.date}`, 105, 68, { align: 'center' });
-    
-    // Customer information
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Facturé à:', 15, 80);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.customer, 15, 87);
-    doc.text('client@example.com', 15, 93);
-    
-    // Items table
-    doc.autoTable({
-      startY: 105,
-      head: [['Description', 'Qté', 'Prix unitaire', 'Total']],
-      body: [
-        ['Zen Classic (500ml)', '2', '9 999 CFA', '19 998 CFA'],
-        ...(order.items > 1 ? [['Zen Boost (250ml)', '1', '7 250 CFA', '7 250 CFA']] : []),
-        ...(order.items > 2 ? [['Zen Relax (1L)', '1', '14 995 CFA', '14 995 CFA']] : [])
-      ],
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 4 },
-      headStyles: { fillColor: [139, 92, 246], textColor: 255 },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 20, halign: 'center' },
-        2: { cellWidth: 40, halign: 'right' },
-        3: { cellWidth: 40, halign: 'right' }
-      }
-    });
-    
-    const finalY = (doc.lastAutoTable as any).finalY + 15;
-    
-    // Total
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total', 150, finalY);
-    doc.text(order.total, 180, finalY, { align: 'right' });
-    
-    // Footer
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Merci pour votre commande!', 105, finalY + 20, { align: 'center' });
-    doc.text(`${appSettings.appName} - SIRET: 12345678900000`, 105, finalY + 25, { align: 'center' });
-    
-    // Page numbers
-    const pageCount = doc.internal.getNumberOfPages();
-    for(let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${appSettings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
-    }
-    
-    doc.save(`facture-${order.id}.pdf`);
-    
-    toast({
-      title: "Facture téléchargée",
-      description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format PDF`
-    });
-    
-    setIsInvoiceDialogOpen(false);
+    exportData(invoiceData, "pdf", `facture-${order.id}`, metadata)
+      .then(success => {
+        if (success) {
+          toast({
+            title: "Facture téléchargée",
+            description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format PDF`
+          });
+          setIsInvoiceDialogOpen(false);
+        } else {
+          toast({
+            title: "Erreur de téléchargement",
+            description: "Une erreur est survenue lors du téléchargement de la facture",
+            variant: "destructive"
+          });
+        }
+      });
   };
 
   return (
@@ -771,23 +623,23 @@ export default function OrdersPage() {
                   <tr>
                     <td className="py-1">Zen Classic (500ml)</td>
                     <td className="text-right">2</td>
-                    <td className="text-right">9 999 FCFA</td>
-                    <td className="text-right">19 998 FCFA</td>
+                    <td className="text-right">9 999 CFA</td>
+                    <td className="text-right">19 998 CFA</td>
                   </tr>
                   {currentOrder.items > 1 && (
                     <tr>
                       <td className="py-1">Zen Boost (250ml)</td>
                       <td className="text-right">1</td>
-                      <td className="text-right">7 250 FCFA</td>
-                      <td className="text-right">7 250 FCFA</td>
+                      <td className="text-right">7 250 CFA</td>
+                      <td className="text-right">7 250 CFA</td>
                     </tr>
                   )}
                   {currentOrder.items > 2 && (
                     <tr>
                       <td className="py-1">Zen Relax (1L)</td>
                       <td className="text-right">1</td>
-                      <td className="text-right">14 995 FCFA</td>
-                      <td className="text-right">14 995 FCFA</td>
+                      <td className="text-right">14 995 CFA</td>
+                      <td className="text-right">14 995 CFA</td>
                     </tr>
                   )}
                 </tbody>

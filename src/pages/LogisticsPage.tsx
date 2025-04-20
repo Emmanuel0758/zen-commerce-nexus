@@ -1,265 +1,280 @@
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarNav } from "@/components/SidebarNav";
-import { DeliveryMapCard } from "@/components/DeliveryMapCard";
-import { DeliveryTrackingTable } from "@/components/DeliveryTrackingTable";
-import { CarriersConfigCard } from "@/components/CarriersConfigCard";
-import { ShippingZonesCard } from "@/components/ShippingZonesCard";
-import { Button } from "@/components/ui/button";
-import { Truck, Map, Settings, Download, Upload } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useState } from "react";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { handleExport } from "@/utils/exportUtils";
-import { useToast } from "@/hooks/use-toast";
+/**
+ * Exports data in different formats
+ * @param data The data to export
+ * @param format The format to export (pdf, excel)
+ * @param fileName The name of the file without extension
+ * @param metadata Optional metadata about the export
+ * @returns Promise resolving to true if export was successful
+ */
+export const exportData = async (
+  data: any[],
+  format: "pdf" | "excel",
+  fileName: string,
+  metadata?: Record<string, any>
+): Promise<boolean> => {
+  try {
+    switch (format) {
+      case "pdf":
+        return exportPdf(fileName, data, metadata);
+      case "excel":
+        return exportExcel(fileName, data, metadata);
+      default:
+        console.error("Format d'export non supporté");
+        return false;
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'exportation:", error);
+    return false;
+  }
+};
 
-export default function LogisticsPage() {
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const [isExporting, setIsExporting] = useState(false);
+/**
+ * Wrapper function for exportData for simpler use
+ */
+export const handleExport = async (
+  data: any[],
+  format: "pdf" | "excel",
+  fileName: string,
+  metadata?: Record<string, any>
+): Promise<boolean> => {
+  return await exportData(data, format, fileName, metadata);
+};
 
-  // Données de démo pour l'exportation
-  const demoLogisticsData = [
-    { id: "DEL-1055", status: "en_cours", destination: "Abidjan Centre", date: "2025-04-02" },
-    { id: "DEL-1052", status: "retard", destination: "Bouaké", date: "2025-04-01" },
-    { id: "DEL-1050", status: "prêt", destination: "Yamoussoukro", date: "2025-04-03" },
-    { id: "DEL-1048", status: "en_cours", destination: "San-Pédro", date: "2025-04-02" },
-    { id: "DEL-1045", status: "en_cours", destination: "Korhogo", date: "2025-04-01" },
-  ];
-
-  // Fonction pour gérer l'export de données
-  const handleExportRequest = async (format: "json" | "pdf" | "excel") => {
-    setIsExporting(true);
-    try {
-      const success = await handleExport(demoLogisticsData, format, "logistique-donnees");
-      if (success) {
-        toast({
-          title: "Exportation réussie",
-          description: `Les données ont été exportées avec succès au format ${format.toUpperCase()}.`,
+/**
+ * Exports data as PDF with improved company information and structure
+ */
+const exportPdf = (
+  fileName: string,
+  data: any[],
+  metadata?: Record<string, any>
+): boolean => {
+  try {
+    // Get app settings from localStorage to include company information
+    const appSettingsStr = localStorage.getItem('appSettings');
+    const appSettings = appSettingsStr ? JSON.parse(appSettingsStr) : {
+      appName: 'Zen Commerce',
+      logo: null,
+      currency: 'CFA'
+    };
+    
+    const doc = new jsPDF();
+    
+    // Check if this is an invoice export
+    const isInvoice = fileName.startsWith('facture-') || (metadata && metadata.invoiceType);
+    
+    // Header with company information
+    if (appSettings.logo) {
+      try {
+        doc.addImage(appSettings.logo, 'JPEG', 15, 10, 30, 30);
+      } catch (error) {
+        console.error("Erreur lors du chargement du logo:", error);
+        doc.setFontSize(22);
+        doc.setTextColor(128, 0, 128);
+        doc.text(appSettings.appName.substring(0, 1), 25, 25);
+      }
+    }
+    
+    // Company name and title
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text(appSettings.appName.toUpperCase(), appSettings.logo ? 50 : 15, 25);
+    
+    // Company contact info
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('123 Avenue du Commerce', appSettings.logo ? 50 : 15, 32);
+    doc.text('Abidjan, Côte d\'Ivoire', appSettings.logo ? 50 : 15, 37);
+    doc.text('contact@' + appSettings.appName.toLowerCase().replace(/\s/g, '') + '.com', appSettings.logo ? 50 : 15, 42);
+    
+    // Document title
+    const title = metadata?.title || `Rapport ${fileName}`;
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title.toUpperCase(), 105, 55, { align: 'center' });
+    
+    // Export date and contextual information
+    doc.setFontSize(11);
+    doc.text(`Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`, 105, 62, { align: 'center' });
+    
+    // Add metadata as contextual information
+    if (metadata) {
+      let yPosition = 70;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      
+      // Filter out title which is already displayed
+      const contextualInfo = Object.entries(metadata).filter(([key]) => key !== 'title');
+      
+      for (const [key, value] of contextualInfo) {
+        if (typeof value !== 'object') {
+          const formattedKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          doc.text(`${formattedKey}: ${value}`, 15, yPosition);
+          yPosition += 6;
+        }
+      }
+      
+      yPosition += 5;
+      
+      // Table data
+      if (data.length > 0) {
+        const firstItem = data[0];
+        const headers = Object.keys(firstItem);
+        const rows = data.map(item => headers.map(header => item[header]));
+        
+        // Format headers for display
+        const formattedHeaders = headers.map(header => 
+          header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')
+        );
+        
+        // @ts-ignore - jspdf-autotable functionality
+        doc.autoTable({
+          head: [formattedHeaders],
+          body: rows,
+          startY: yPosition,
+          theme: 'grid',
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [139, 92, 246] }, // Utilisation de la couleur Zen (violet)
+          margin: { top: 10 }
         });
       } else {
-        toast({
-          title: "Erreur d'exportation",
-          description: `Une erreur est survenue lors de l'exportation au format ${format.toUpperCase()}`,
-          variant: "destructive"
+        doc.text("Aucune donnée disponible", 15, yPosition);
+      }
+    } else {
+      // Simple table for data without metadata
+      if (data.length > 0) {
+        const firstItem = data[0];
+        const headers = Object.keys(firstItem);
+        const rows = data.map(item => headers.map(header => item[header]));
+        
+        const formattedHeaders = headers.map(header => 
+          header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')
+        );
+        
+        // @ts-ignore - jspdf-autotable functionality
+        doc.autoTable({
+          head: [formattedHeaders],
+          body: rows,
+          startY: 70,
+          theme: 'grid',
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [139, 92, 246] } // Utilisation de la couleur Zen (violet)
+        });
+      } else {
+        doc.text("Aucune donnée disponible", 15, 70);
+      }
+    }
+    
+    // Add summary information at the bottom if we have data
+    if (data.length > 0) {
+      const finalY = (doc as any).lastAutoTable.finalY || 70;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total éléments: ${data.length}`, 15, finalY + 15);
+      
+      // Add custom summary based on data type if needed
+      if (metadata?.summary) {
+        const summaryLines = typeof metadata.summary === 'string' 
+          ? [metadata.summary] 
+          : Object.entries(metadata.summary).map(([key, value]) => `${key}: ${value}`);
+          
+        let summaryY = finalY + 22;
+        summaryLines.forEach(line => {
+          doc.text(line, 15, summaryY);
+          summaryY += 7;
         });
       }
-    } catch (error) {
-      console.error("Erreur lors de l'exportation:", error);
-      toast({
-        title: "Erreur d'exportation",
-        description: "Une erreur inattendue est survenue",
-        variant: "destructive"
-      });
-    } finally {
-      setIsExporting(false);
     }
-  };
+    
+    // Add page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${appSettings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+    }
+    
+    doc.save(`${fileName}.pdf`);
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de l'exportation PDF:", error);
+    return false;
+  }
+};
 
-  // Fonction pour gérer l'import de données
-  const handleImport = () => {
-    // Simuler un import réussi
-    setTimeout(() => {
-      toast({
-        title: "Import réussi",
-        description: "Les données ont été importées avec succès"
+/**
+ * Exports data as Excel (CSV)
+ */
+const exportExcel = (
+  fileName: string,
+  data: any[],
+  metadata?: Record<string, any>
+): boolean => {
+  try {
+    if (data.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return false;
+    }
+    
+    // Get app settings to include company info
+    const appSettingsStr = localStorage.getItem('appSettings');
+    const appSettings = appSettingsStr ? JSON.parse(appSettingsStr) : {
+      appName: 'Zen Commerce'
+    };
+    
+    // Get headers from the first data item
+    const headers = Object.keys(data[0]);
+    
+    // Create CSV content
+    let csvContent = headers.join(",") + "\n";
+    
+    data.forEach(item => {
+      const row = headers.map(header => {
+        const value = item[header];
+        // Handle CSV special characters and ensure proper quoting
+        if (value === null || value === undefined) {
+          return '""';
+        }
+        const stringValue = String(value).replace(/"/g, '""');
+        return `"${stringValue}"`;
       });
-      setImportDialogOpen(false);
-    }, 1000);
-  };
-
-  return (
-    <div className="flex">
-      <SidebarNav />
-      <div className="flex-1 p-8">
-        <Card className="border-none shadow-none">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-2xl font-bold">Logistique</CardTitle>
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2" disabled={isExporting}>
-                      <Download className="h-4 w-4" />
-                      Exporter
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-56">
-                    <div className="flex flex-col gap-1">
-                      <Button variant="ghost" className="justify-start" onClick={() => handleExportRequest("excel")}>
-                        Format Excel (CSV)
-                      </Button>
-                      <Button variant="ghost" className="justify-start" onClick={() => handleExportRequest("pdf")}>
-                        Format PDF
-                      </Button>
-                      <Button variant="ghost" className="justify-start" onClick={() => handleExportRequest("json")}>
-                        Format JSON
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Button variant="outline" className="flex items-center gap-2" onClick={() => setImportDialogOpen(true)}>
-                  <Upload className="h-4 w-4" />
-                  Importer
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2" onClick={() => setSettingsDialogOpen(true)}>
-                  <Settings className="h-4 w-4" />
-                  Paramètres
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-6">
-              Gérez vos livraisons, transporteurs et suivez vos expéditions en temps réel en Côte d'Ivoire.
-            </p>
-            
-            <div className="flex flex-col gap-6">
-              {/* Carte principale avec la carte de livraisons */}
-              <DeliveryMapCard />
-              
-              {/* Table de suivi des livraisons */}
-              <Card>
-                <CardContent className="pt-6">
-                  <DeliveryTrackingTable />
-                </CardContent>
-              </Card>
-              
-              {/* Section avec les cards de configuration */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <CarriersConfigCard />
-                <ShippingZonesCard />
-              </div>
-              
-              {/* Section statistiques */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-md font-medium">Statistiques de Livraison</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardContent className="p-4 flex flex-col items-center">
-                        <div className="text-4xl font-bold text-green-600 mb-1">94%</div>
-                        <p className="text-sm text-muted-foreground">Livraisons à temps</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-4 flex flex-col items-center">
-                        <div className="text-4xl font-bold text-amber-500 mb-1">2.3h</div>
-                        <p className="text-sm text-muted-foreground">Temps moyen de livraison</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-4 flex flex-col items-center">
-                        <div className="text-4xl font-bold text-primary mb-1">8</div>
-                        <p className="text-sm text-muted-foreground">Livraisons en cours</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Dialogue Paramètres */}
-      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Paramètres de Logistique</DialogTitle>
-            <DialogDescription>
-              Configurez les paramètres de votre système de logistique
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="grid gap-4">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Méthodes de livraison</h3>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="standard" defaultChecked />
-                  <label htmlFor="standard">Livraison standard</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="express" defaultChecked />
-                  <label htmlFor="express">Livraison express</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="sameday" />
-                  <label htmlFor="sameday">Livraison le jour même</label>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium mb-2">Notifications</h3>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="customer_notif" defaultChecked />
-                  <label htmlFor="customer_notif">Notifier les clients des mises à jour</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="admin_notif" defaultChecked />
-                  <label htmlFor="admin_notif">Notifier les administrateurs des problèmes</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSettingsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={() => {
-              toast({
-                title: "Paramètres mis à jour",
-                description: "Les paramètres de logistique ont été mis à jour"
-              });
-              setSettingsDialogOpen(false);
-            }}>
-              Enregistrer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialogue Importer */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Importer des données</DialogTitle>
-            <DialogDescription>
-              Importez des données de livraisons depuis un fichier
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="grid gap-4">
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-md p-6 text-center">
-                <div className="flex flex-col items-center">
-                  <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Glissez-déposez un fichier ici ou cliquez pour parcourir
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Formats supportés: CSV, JSON, XLS
-                  </p>
-                  <Button variant="outline" className="mt-4">
-                    Parcourir les fichiers
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleImport}>
-              Importer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+      csvContent += row.join(",") + "\n";
+    });
+    
+    // Add metadata and company info as commented header
+    const metadataLines = [
+      `# ${appSettings.appName}`,
+      `# Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`,
+      `# Fichier: ${fileName}`
+    ];
+    
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (typeof value !== 'object') {
+          metadataLines.push(`# ${key}: ${value}`);
+        }
+      });
+    }
+    
+    const metadataContent = metadataLines.join("\n");
+    csvContent = metadataContent + "\n\n" + csvContent;
+    
+    // Create file download
+    const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${fileName}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de l'exportation Excel (CSV):", error);
+    return false;
+  }
+};

@@ -369,7 +369,7 @@ export default function ProjectsPage() {
     });
   };
 
-  const handleExportProjects = async (format: "json" | "pdf" | "excel") => {
+  const handleExportProjects = (format: "pdf" | "excel") => {
     setIsExporting(true);
     try {
       const success = await exportData(projects, format, "Projets");

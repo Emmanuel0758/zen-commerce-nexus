@@ -223,7 +223,7 @@ export default function ProductsPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleExportProducts = async (format: "json" | "pdf" | "excel") => {
+  const handleExportProducts = (format: "pdf" | "excel") => {
     try {
       toast({
         title: `Exportation ${format.toUpperCase()} en cours`,

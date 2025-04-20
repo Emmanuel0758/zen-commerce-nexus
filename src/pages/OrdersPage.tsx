@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -400,27 +399,38 @@ export default function OrdersPage() {
   const handleDownloadInvoice = (order: Order) => {
     const doc = new jsPDF();
     
-    if (settings.logo) {
+    // Get app settings
+    const appSettingsStr = localStorage.getItem('appSettings');
+    const appSettings = appSettingsStr ? JSON.parse(appSettingsStr) : {
+      appName: 'Zen Commerce',
+      logo: null,
+      currency: 'CFA'
+    };
+    
+    // Add header with company logo or text
+    if (appSettings.logo) {
       try {
-        doc.addImage(settings.logo, 'JPEG', 15, 10, 30, 30);
+        doc.addImage(appSettings.logo, 'JPEG', 15, 10, 30, 30);
       } catch (error) {
         console.error("Erreur lors du chargement du logo:", error);
         doc.setFontSize(22);
-        doc.setTextColor(128, 0, 128);
-        doc.text(settings.appName.substring(0, 1), 25, 25);
+        doc.setTextColor(139, 92, 246);
+        doc.text(appSettings.appName.substring(0, 1), 25, 25);
       }
     }
     
+    // Company name and details
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text(settings.appName.toUpperCase(), settings.logo ? 50 : 15, 25);
+    doc.text(appSettings.appName.toUpperCase(), appSettings.logo ? 50 : 15, 25);
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('123 Avenue du Commerce', settings.logo ? 50 : 15, 32);
-    doc.text('75001 Paris, France', settings.logo ? 50 : 15, 37);
-    doc.text('contact@zenbeverages.com', settings.logo ? 50 : 15, 42);
+    doc.text('123 Avenue du Commerce', appSettings.logo ? 50 : 15, 32);
+    doc.text('Abidjan, Côte d\'Ivoire', appSettings.logo ? 50 : 15, 37);
+    doc.text('contact@' + appSettings.appName.toLowerCase().replace(/\s/g, '') + '.com', appSettings.logo ? 50 : 15, 42);
     
+    // Invoice title and number
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('FACTURE', 105, 55, { align: 'center' });
@@ -429,6 +439,7 @@ export default function OrdersPage() {
     doc.text(`N° ${order.id.replace('ZEN-', 'INV-')}`, 105, 62, { align: 'center' });
     doc.text(`Date: ${order.date}`, 105, 68, { align: 'center' });
     
+    // Customer information
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Facturé à:', 15, 80);
@@ -436,21 +447,18 @@ export default function OrdersPage() {
     doc.text(order.customer, 15, 87);
     doc.text('client@example.com', 15, 93);
     
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    
-    // @ts-ignore
+    // Items table
     doc.autoTable({
       startY: 105,
       head: [['Description', 'Qté', 'Prix unitaire', 'Total']],
       body: [
-        ['Zen Classic (500ml)', '2', '9 999 FCFA', '19 998 FCFA'],
-        ...(order.items > 1 ? [['Zen Boost (250ml)', '1', '7 250 FCFA', '7 250 FCFA']] : []),
-        ...(order.items > 2 ? [['Zen Relax (1L)', '1', '14 995 FCFA', '14 995 FCFA']] : [])
+        ['Zen Classic (500ml)', '2', '9 999 CFA', '19 998 CFA'],
+        ...(order.items > 1 ? [['Zen Boost (250ml)', '1', '7 250 CFA', '7 250 CFA']] : []),
+        ...(order.items > 2 ? [['Zen Relax (1L)', '1', '14 995 CFA', '14 995 CFA']] : [])
       ],
       theme: 'grid',
       styles: { fontSize: 9, cellPadding: 4 },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      headStyles: { fillColor: [139, 92, 246], textColor: 255 },
       columnStyles: {
         0: { cellWidth: 80 },
         1: { cellWidth: 20, halign: 'center' },
@@ -461,6 +469,7 @@ export default function OrdersPage() {
     
     const finalY = (doc.lastAutoTable as any).finalY + 15;
     
+    // Total
     doc.setFont('helvetica', 'bold');
     doc.text('Total', 150, finalY);
     doc.text(order.total, 180, finalY, { align: 'right' });
@@ -469,7 +478,7 @@ export default function OrdersPage() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.text('Merci pour votre commande!', 105, finalY + 20, { align: 'center' });
-    doc.text(`${settings.appName} - SIRET: 12345678900000`, 105, finalY + 25, { align: 'center' });
+    doc.text(`${appSettings.appName} - SIRET: 12345678900000`, 105, finalY + 25, { align: 'center' });
     
     // Page numbers
     const pageCount = doc.internal.getNumberOfPages();
@@ -477,7 +486,7 @@ export default function OrdersPage() {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text(`${settings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+      doc.text(`${appSettings.appName} - Page ${i} sur ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
     }
     
     doc.save(`facture-${order.id}.pdf`);

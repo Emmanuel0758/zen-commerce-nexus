@@ -287,179 +287,161 @@ export default function OrdersPage() {
     try {
       const { Document, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, BorderStyle } = await import('docx');
       
-      const header = new Table({
-        rows: [
-          new TableRow({
-            children: [
-              new TableCell({
-                children: [
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: settings.appName, bold: true, size: 28, color: '1EAEDB' })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "123 Avenue du Commerce", size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Abidjan, Côte d'Ivoire", size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "+225 01 23 45 67 89", size: 24 })
-                    ]
-                  })
-                ],
-                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
-              }),
-              new TableCell({
-                children: [
-                  new Paragraph({
-                    text: "Facture",
-                    alignment: AlignmentType.RIGHT,
-                    heading: 1
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: `N° facture: ${order.id.replace('ZEN-', 'INV-')}`, size: 24 })
-                    ],
-                    alignment: AlignmentType.RIGHT
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: `Date: ${order.date}`, size: 24 })
-                    ],
-                    alignment: AlignmentType.RIGHT
-                  })
-                ],
-                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
-              })
-            ]
-          })
-        ],
-        width: {
-          size: 100,
-          type: "pct"
-        }
-      });
-
-      const clientInfo = new Table({
-        rows: [
-          new TableRow({
-            children: [
-              new TableCell({
-                children: [
-                  new Paragraph({ 
-                    children: [
-                      new TextRun({ text: "Facturé à:", bold: true, size: 24 })
-                    ]
-                  }),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: order.customer, size: 24 })
-                    ]
-                  })
-                ],
-                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
-              })
-            ]
-          })
-        ]
-      });
-
-      const items = [
-        {
-          description: 'Zen Classic (500ml)',
-          quantity: 2,
-          rate: '9 999',
-          amount: '19 998'
-        }
-      ];
-
-      if (order.items > 1) {
-        items.push({
-          description: 'Zen Boost (250ml)',
-          quantity: 1,
-          rate: '7 250',
-          amount: '7 250'
-        });
-      }
-
-      if (order.items > 2) {
-        items.push({
-          description: 'Zen Relax (1L)',
-          quantity: 1,
-          rate: '14 995',
-          amount: '14 995'
-        });
-      }
-
-      const itemsTable = new Table({
-        rows: [
-          new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph({ text: "Description", bold: true })], shading: { fill: "1EAEDB", val: "clear" } }),
-              new TableCell({ children: [new Paragraph({ text: "Quantité", bold: true })], shading: { fill: "1EAEDB", val: "clear" } }),
-              new TableCell({ children: [new Paragraph({ text: "Prix unitaire", bold: true })], shading: { fill: "1EAEDB", val: "clear" } }),
-              new TableCell({ children: [new Paragraph({ text: "Montant", bold: true })], shading: { fill: "1EAEDB", val: "clear" } })
-            ]
-          }),
-          ...items.map(item => new TableRow({
-            children: [
-              new TableCell({ children: [new Paragraph(item.description)] }),
-              new TableCell({ children: [new Paragraph({ text: item.quantity.toString(), alignment: AlignmentType.RIGHT })] }),
-              new TableCell({ children: [new Paragraph({ text: item.rate + " FCFA", alignment: AlignmentType.RIGHT })] }),
-              new TableCell({ children: [new Paragraph({ text: item.amount + " FCFA", alignment: AlignmentType.RIGHT })] })
-            ]
-          }))
-        ]
-      });
-
-      const total = new Table({
-        rows: [
-          new TableRow({
-            children: [
-              new TableCell({ 
-                children: [new Paragraph("")],
-                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
-              }),
-              new TableCell({
-                children: [
-                  new Paragraph({ text: "Total:", bold: true, alignment: AlignmentType.RIGHT }),
-                  new Paragraph({ text: order.total, alignment: AlignmentType.RIGHT })
-                ],
-                borders: { top: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.NONE } }
-              })
-            ]
-          })
-        ],
-        width: {
-          size: 100,
-          type: "pct"
-        }
-      });
-
       const doc = new Document({
         sections: [{
           properties: {},
           children: [
-            header,
-            new Paragraph(""),
-            new Paragraph(""),
-            clientInfo,
-            new Paragraph(""),
-            itemsTable,
-            new Paragraph(""),
-            total
+            new Table({
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: settings.appName, size: 28 })
+                          ],
+                          style: "strong"
+                        }),
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: "123 Avenue du Commerce", size: 24 })
+                          ]
+                        }),
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: "Abidjan, Côte d'Ivoire", size: 24 })
+                          ]
+                        }),
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: "+225 01 23 45 67 89", size: 24 })
+                          ]
+                        })
+                      ],
+                      borders: { top: BorderStyle.NONE, left: BorderStyle.NONE, bottom: BorderStyle.NONE, right: BorderStyle.NONE }
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          text: "FACTURE",
+                          heading: "Title",
+                          alignment: AlignmentType.RIGHT
+                        }),
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: `N° facture: ${order.id.replace('ZEN-', 'INV-')}`, size: 24 })
+                          ],
+                          alignment: AlignmentType.RIGHT
+                        }),
+                        new Paragraph({
+                          children: [
+                            new TextRun({ text: `Date: ${order.date}`, size: 24 })
+                          ],
+                          alignment: AlignmentType.RIGHT
+                        })
+                      ],
+                      borders: { top: BorderStyle.NONE, left: BorderStyle.NONE, bottom: BorderStyle.NONE, right: BorderStyle.NONE }
+                    })
+                  ]
+                })
+              ],
+              width: {
+                size: 100,
+                type: "pct"
+              }
+            }),
+            new Paragraph({}),
+            new Paragraph({
+              children: [
+                new TextRun({ text: "Facturé à:", size: 24 }),
+              ],
+              style: "strong"
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: order.customer, size: 24 })
+              ]
+            }),
+            new Paragraph({}),
+            new Table({
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({ 
+                      children: [new Paragraph({ text: "Description", style: "strong" })],
+                      shading: { fill: "1EAEDB" }
+                    }),
+                    new TableCell({ 
+                      children: [new Paragraph({ text: "Quantité", style: "strong", alignment: AlignmentType.RIGHT })],
+                      shading: { fill: "1EAEDB" }
+                    }),
+                    new TableCell({ 
+                      children: [new Paragraph({ text: "Prix unitaire", style: "strong", alignment: AlignmentType.RIGHT })],
+                      shading: { fill: "1EAEDB" }
+                    }),
+                    new TableCell({ 
+                      children: [new Paragraph({ text: "Montant", style: "strong", alignment: AlignmentType.RIGHT })],
+                      shading: { fill: "1EAEDB" }
+                    })
+                  ]
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph("Zen Classic (500ml)")] }),
+                    new TableCell({ children: [new Paragraph({ text: "2", alignment: AlignmentType.RIGHT })] }),
+                    new TableCell({ children: [new Paragraph({ text: "9 999 FCFA", alignment: AlignmentType.RIGHT })] }),
+                    new TableCell({ children: [new Paragraph({ text: "19 998 FCFA", alignment: AlignmentType.RIGHT })] })
+                  ]
+                }),
+                ...(order.items > 1 ? [new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph("Zen Boost (250ml)")] }),
+                    new TableCell({ children: [new Paragraph({ text: "1", alignment: AlignmentType.RIGHT })] }),
+                    new TableCell({ children: [new Paragraph({ text: "7 250 FCFA", alignment: AlignmentType.RIGHT })] }),
+                    new TableCell({ children: [new Paragraph({ text: "7 250 FCFA", alignment: AlignmentType.RIGHT })] })
+                  ]
+                })] : []),
+                ...(order.items > 2 ? [new TableRow({
+                  children: [
+                    new TableCell({ children: [new Paragraph("Zen Relax (1L)")] }),
+                    new TableCell({ children: [new Paragraph({ text: "1", alignment: AlignmentType.RIGHT })] }),
+                    new TableCell({ children: [new Paragraph({ text: "14 995 FCFA", alignment: AlignmentType.RIGHT })] }),
+                    new TableCell({ children: [new Paragraph({ text: "14 995 FCFA", alignment: AlignmentType.RIGHT })] })
+                  ]
+                })] : [])
+              ]
+            }),
+            new Paragraph({}),
+            new Table({
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("")],
+                      borders: { top: BorderStyle.NONE, left: BorderStyle.NONE, bottom: BorderStyle.NONE, right: BorderStyle.NONE }
+                    }),
+                    new TableCell({
+                      children: [
+                        new Paragraph({ text: "Total:", style: "strong", alignment: AlignmentType.RIGHT }),
+                        new Paragraph({ text: order.total, alignment: AlignmentType.RIGHT })
+                      ],
+                      borders: { top: BorderStyle.SINGLE, left: BorderStyle.NONE, bottom: BorderStyle.SINGLE, right: BorderStyle.NONE }
+                    })
+                  ]
+                })
+              ],
+              width: {
+                size: 100,
+                type: "pct"
+              }
+            })
           ]
         }]
       });
 
       try {
+        const { Packer } = await import('docx');
         const blob = await Packer.toBlob(doc);
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -479,9 +461,9 @@ export default function OrdersPage() {
         console.error("Erreur lors du téléchargement de la facture DOCX:", error);
         
         const csvContent = "Description,Quantité,Prix unitaire,Montant\n" +
-          items.map(item => 
-            `${item.description},${item.quantity},${item.rate} FCFA,${item.amount} FCFA`
-          ).join("\n");
+          "Zen Classic (500ml),2,9 999 FCFA,19 998 FCFA\n" +
+          (order.items > 1 ? "Zen Boost (250ml),1,7 250 FCFA,7 250 FCFA\n" : "") +
+          (order.items > 2 ? "Zen Relax (1L),1,14 995 FCFA,14 995 FCFA" : "");
 
         const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
         const link = document.createElement("a");
@@ -493,7 +475,7 @@ export default function OrdersPage() {
 
         toast({
           title: "Facture téléchargée",
-          description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format CSV (fallback)`
+          description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format CSV (solution de secours)`
         });
         setIsInvoiceDialogOpen(false);
       }
@@ -875,117 +857,4 @@ export default function OrdersPage() {
                 />
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <FormLabel>Produits</FormLabel>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleAddProductField}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Ajouter un produit
-                  </Button>
-                </div>
-                
-                {form.getValues().items.map((_, index) => (
-                  <div key={index} className="flex items-end gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.product`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormControl>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner un produit" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {demoProducts.map(product => (
-                                  <SelectItem key={product.id} value={product.id}>
-                                    {product.name} - {product.price.toLocaleString('fr-FR')} FCFA
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.quantity`}
-                      render={({ field }) => (
-                        <FormItem className="w-20">
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              min="1" 
-                              placeholder="Qté"
-                              {...field}
-                              onChange={e => field.onChange(parseInt(e.target.value) || 1)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button 
-                      type="button" 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => handleRemoveProductField(index)}
-                      disabled={form.getValues().items.length <= 1}
-                    >
-                      Retirer
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="shippingAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Adresse de livraison (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Adresse de livraison" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Notes concernant la commande" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsNewOrderDialogOpen(false)}>Annuler</Button>
-                <Button type="submit">Créer la commande</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+              <div className="space-

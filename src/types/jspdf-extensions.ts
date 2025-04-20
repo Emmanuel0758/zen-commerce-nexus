@@ -1,13 +1,9 @@
 
 import { jsPDF } from "jspdf";
-import { PubSub } from "pubsub-js";
+import PubSub from "pubsub-js";
 
 declare module "jspdf" {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable: {
-      finalY: number;
-    };
     internal: {
       events: PubSub;
       scaleFactor: number;
@@ -23,5 +19,3 @@ declare module "jspdf" {
     };
   }
 }
-
-export {};

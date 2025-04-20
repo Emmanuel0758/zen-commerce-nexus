@@ -284,128 +284,226 @@ export default function OrdersPage() {
   };
 
   const handleDownloadInvoice = async (order: Order) => {
-    const invoiceItems = [
-      {
-        description: 'Zen Classic (500ml)',
-        quantity: 2,
-        unitPrice: '9 999 CFA',
-        total: '19 998 CFA'
-      }
-    ];
-    
-    if (order.items > 1) {
-      invoiceItems.push({
-        description: 'Zen Boost (250ml)',
-        quantity: 1,
-        unitPrice: '7 250 CFA',
-        total: '7 250 CFA'
-      });
-    }
-    
-    if (order.items > 2) {
-      invoiceItems.push({
-        description: 'Zen Relax (1L)',
-        quantity: 1,
-        unitPrice: '14 995 CFA',
-        total: '14 995 CFA'
-      });
-    }
-
     try {
-      const { Document, Paragraph, Table, TableRow, TableCell, TextRun, Packer } = await import('docx');
+      const { Document, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, BorderStyle } = await import('docx');
       
+      const header = new Table({
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: settings.appName, bold: true, size: 28, color: '1EAEDB' })
+                    ]
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: "123 Avenue du Commerce", size: 24 })
+                    ]
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: "Abidjan, Côte d'Ivoire", size: 24 })
+                    ]
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: "+225 01 23 45 67 89", size: 24 })
+                    ]
+                  })
+                ],
+                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    text: "Facture",
+                    alignment: AlignmentType.RIGHT,
+                    heading: 1
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: `N° facture: ${order.id.replace('ZEN-', 'INV-')}`, size: 24 })
+                    ],
+                    alignment: AlignmentType.RIGHT
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: `Date: ${order.date}`, size: 24 })
+                    ],
+                    alignment: AlignmentType.RIGHT
+                  })
+                ],
+                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+              })
+            ]
+          })
+        ],
+        width: {
+          size: 100,
+          type: "pct"
+        }
+      });
+
+      const clientInfo = new Table({
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [
+                  new Paragraph({ 
+                    children: [
+                      new TextRun({ text: "Facturé à:", bold: true, size: 24 })
+                    ]
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: order.customer, size: 24 })
+                    ]
+                  })
+                ],
+                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+              })
+            ]
+          })
+        ]
+      });
+
+      const items = [
+        {
+          description: 'Zen Classic (500ml)',
+          quantity: 2,
+          rate: '9 999',
+          amount: '19 998'
+        }
+      ];
+
+      if (order.items > 1) {
+        items.push({
+          description: 'Zen Boost (250ml)',
+          quantity: 1,
+          rate: '7 250',
+          amount: '7 250'
+        });
+      }
+
+      if (order.items > 2) {
+        items.push({
+          description: 'Zen Relax (1L)',
+          quantity: 1,
+          rate: '14 995',
+          amount: '14 995'
+        });
+      }
+
+      const itemsTable = new Table({
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph({ text: "Description", bold: true })], shading: { fill: "1EAEDB", val: "clear" } }),
+              new TableCell({ children: [new Paragraph({ text: "Quantité", bold: true })], shading: { fill: "1EAEDB", val: "clear" } }),
+              new TableCell({ children: [new Paragraph({ text: "Prix unitaire", bold: true })], shading: { fill: "1EAEDB", val: "clear" } }),
+              new TableCell({ children: [new Paragraph({ text: "Montant", bold: true })], shading: { fill: "1EAEDB", val: "clear" } })
+            ]
+          }),
+          ...items.map(item => new TableRow({
+            children: [
+              new TableCell({ children: [new Paragraph(item.description)] }),
+              new TableCell({ children: [new Paragraph({ text: item.quantity.toString(), alignment: AlignmentType.RIGHT })] }),
+              new TableCell({ children: [new Paragraph({ text: item.rate + " FCFA", alignment: AlignmentType.RIGHT })] }),
+              new TableCell({ children: [new Paragraph({ text: item.amount + " FCFA", alignment: AlignmentType.RIGHT })] })
+            ]
+          }))
+        ]
+      });
+
+      const total = new Table({
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({ 
+                children: [new Paragraph("")],
+                borders: { top: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({ text: "Total:", bold: true, alignment: AlignmentType.RIGHT }),
+                  new Paragraph({ text: order.total, alignment: AlignmentType.RIGHT })
+                ],
+                borders: { top: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.NONE } }
+              })
+            ]
+          })
+        ],
+        width: {
+          size: 100,
+          type: "pct"
+        }
+      });
+
       const doc = new Document({
         sections: [{
           properties: {},
           children: [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Facture N° ${order.id.replace('ZEN-', 'INV-')}`,
-                  bold: true,
-                  size: 32
-                })
-              ]
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: `Client: ${order.customer}`, size: 24 })
-              ]
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: `Date: ${order.date}`, size: 24 })
-              ]
-            }),
-            new Table({
-              rows: [
-                new TableRow({
-                  children: [
-                    new TableCell({ children: [new Paragraph({ text: "Description" })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Quantité" })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Prix unitaire" })] }),
-                    new TableCell({ children: [new Paragraph({ text: "Total" })] })
-                  ]
-                }),
-                ...invoiceItems.map(item => 
-                  new TableRow({
-                    children: [
-                      new TableCell({ children: [new Paragraph({ text: item.description })] }),
-                      new TableCell({ children: [new Paragraph({ text: item.quantity.toString() })] }),
-                      new TableCell({ children: [new Paragraph({ text: item.unitPrice })] }),
-                      new TableCell({ children: [new Paragraph({ text: item.total })] })
-                    ]
-                  })
-                )
-              ]
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: `Total: ${order.total}`, bold: true, size: 28 })
-              ]
-            })
+            header,
+            new Paragraph(""),
+            new Paragraph(""),
+            clientInfo,
+            new Paragraph(""),
+            itemsTable,
+            new Paragraph(""),
+            total
           ]
         }]
       });
 
-      // Générer et télécharger le fichier DOCX
-      const blob = await Packer.toBlob(doc);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `facture-${order.id}.docx`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      try {
+        const blob = await Packer.toBlob(doc);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `facture-${order.id}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
 
-      toast({
-        title: "Facture téléchargée",
-        description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format DOCX`
-      });
-      setIsInvoiceDialogOpen(false);
+        toast({
+          title: "Facture téléchargée",
+          description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format DOCX`
+        });
+        setIsInvoiceDialogOpen(false);
+      } catch (error) {
+        console.error("Erreur lors du téléchargement de la facture DOCX:", error);
+        
+        const csvContent = "Description,Quantité,Prix unitaire,Montant\n" +
+          items.map(item => 
+            `${item.description},${item.quantity},${item.rate} FCFA,${item.amount} FCFA`
+          ).join("\n");
+
+        const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `facture-${order.id}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        toast({
+          title: "Facture téléchargée",
+          description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format CSV (fallback)`
+        });
+        setIsInvoiceDialogOpen(false);
+      }
     } catch (error) {
-      console.error("Erreur lors du téléchargement de la facture:", error);
-      // Si le DOCX échoue, on essaie en Excel (CSV)
-      const csvContent = "data:text/csv;charset=utf-8," + 
-        "Description,Quantité,Prix unitaire,Total\n" +
-        invoiceItems.map(item => 
-          `${item.description},${item.quantity},${item.unitPrice},${item.total}`
-        ).join("\n");
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `facture-${order.id}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
+      console.error("Erreur critique lors de la génération de la facture:", error);
       toast({
-        title: "Facture téléchargée",
-        description: `La facture ${order.id.replace('ZEN-', 'INV-')} a été téléchargée au format CSV`
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la génération de la facture",
+        variant: "destructive"
       });
-      setIsInvoiceDialogOpen(false);
     }
   };
 

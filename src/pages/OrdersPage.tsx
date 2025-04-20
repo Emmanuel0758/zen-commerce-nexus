@@ -200,7 +200,7 @@ export default function OrdersPage() {
     setIsInvoiceDialogOpen(true);
   };
 
-  const handleExportOrders = (format: "pdf" | "excel") => {
+  const handleExportOrders = async (format: "pdf" | "excel") => {
     const fileName = "liste-commandes";
     const metadata = {
       title: "Liste des Commandes",
@@ -212,21 +212,19 @@ export default function OrdersPage() {
       onHoldCount
     };
     
-    exportData(orders, format, fileName, metadata)
-      .then(success => {
-        if (success) {
-          toast({
-            title: "Export réussi",
-            description: `La liste des commandes a été exportée en format ${format.toUpperCase()}`
-          });
-        } else {
-          toast({
-            title: "Erreur d'export",
-            description: "Une erreur est survenue lors de l'exportation",
-            variant: "destructive"
-          });
-        }
+    const success = await exportData(orders, format, fileName, metadata);
+    if (success) {
+      toast({
+        title: "Export réussi",
+        description: `La liste des commandes a été exportée en format ${format.toUpperCase()}`
       });
+    } else {
+      toast({
+        title: "Erreur d'export",
+        description: "Une erreur est survenue lors de l'exportation",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCreateNewOrder = (data: NewOrderFormValues) => {

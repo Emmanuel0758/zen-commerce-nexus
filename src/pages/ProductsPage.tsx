@@ -223,7 +223,7 @@ export default function ProductsPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleExportProducts = (format: "pdf" | "excel") => {
+  const handleExportProducts = async (format: "pdf" | "excel") => {
     try {
       toast({
         title: `Exportation ${format.toUpperCase()} en cours`,
@@ -297,7 +297,7 @@ export default function ProductsPage() {
           }
         });
         
-        const finalY = doc.lastAutoTable.finalY;
+        const finalY = (doc as any).lastAutoTable.finalY;
         
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -395,10 +395,6 @@ export default function ProductsPage() {
                 <DropdownMenuItem onClick={() => handleExportProducts("pdf")}>
                   <FileDown className="mr-2 h-4 w-4" />
                   Format PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExportProducts("json")}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Format JSON
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

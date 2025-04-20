@@ -369,7 +369,7 @@ export default function ProjectsPage() {
     });
   };
 
-  const handleExportProjects = (format: "pdf" | "excel") => {
+  const handleExportProjects = async (format: "pdf" | "excel") => {
     setIsExporting(true);
     try {
       const success = await exportData(projects, format, "Projets");
@@ -433,12 +433,6 @@ export default function ProjectsPage() {
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Exporter en CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleExportProjects("json")}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Exporter en JSON
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

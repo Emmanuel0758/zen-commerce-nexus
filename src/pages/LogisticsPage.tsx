@@ -278,3 +278,13 @@ const exportExcel = (
     return false;
   }
 };
+
+// Add a default export function for the page component
+export default function LogisticsPage() {
+  return (
+    <div>
+      <h1>Logistics Page</h1>
+      <p>This page provides logistics management functionality.</p>
+    </div>
+  );
+}

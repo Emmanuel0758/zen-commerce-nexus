@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useClients } from "@/hooks/useClients";
 import { useOrders } from "@/hooks/useOrders";
@@ -854,4 +855,131 @@ export default function OrdersPage() {
                             <SelectContent>
                               {demoProducts.map(product => (
                                 <SelectItem key={product.id} value={product.id}>
-                                  {product.name} - {product.
+                                  {product.name} - {product.price.toLocaleString('fr-FR')} FCFA
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem className="w-24">
+                          <FormLabel>Quantité</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              step="1" 
+                              {...field} 
+                              onChange={e => field.onChange(parseInt(e.target.value) || 1)} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mb-2"
+                      onClick={() => handleRemoveProductField(index)}
+                      disabled={form.getValues().items.length <= 1}
+                    >
+                      Supprimer
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="Email du client" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Téléphone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Téléphone du client" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ville</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ville du client" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="shippingAddress"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adresse de livraison</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Adresse de livraison" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Notes supplémentaires" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="submit">Créer la commande</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

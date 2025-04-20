@@ -18,7 +18,14 @@ export function useOrders() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Order[];
+      return (data || []).map(order => ({
+        id: order.id,
+        customer: order.client?.name || 'Unknown',
+        date: order.created_at,
+        items: order.items_count,
+        total: `${order.total_amount} FCFA`,
+        status: order.status
+      } as Order));
     },
   });
 
@@ -26,7 +33,13 @@ export function useOrders() {
     mutationFn: async (newOrder: Omit<Order, 'id'>) => {
       const { data, error } = await supabase
         .from('orders')
-        .insert([newOrder])
+        .insert([{
+          client_id: newOrder.client_id,
+          order_number: newOrder.order_number,
+          items_count: newOrder.items,
+          total_amount: parseFloat(newOrder.total.replace(' FCFA', '')),
+          status: newOrder.status
+        }])
         .select()
         .single();
 

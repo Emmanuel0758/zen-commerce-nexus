@@ -297,3 +297,22 @@ const exportExcel = (
     return false;
   }
 };
+
+// Add a default export for SettingsPage
+export default function SettingsPage() {
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex-1 overflow-y-auto p-6">
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold">Paramètres</h1>
+          <p className="text-muted-foreground">
+            Configurez votre application Zen Commerce
+          </p>
+        </header>
+        <div className="grid gap-6">
+          <p>Page de paramètres en cours de développement.</p>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -390,9 +390,6 @@ export default function OrdersPage() {
                 <DropdownMenuItem onClick={() => handleExportOrders("pdf")}>
                   Format PDF
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExportOrders("json")}>
-                  Format JSON
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button onClick={() => setIsNewOrderDialogOpen(true)}>

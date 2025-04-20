@@ -17,5 +17,6 @@ declare module "jspdf" {
       getEncryptor: (objectId: number) => (data: string) => string;
       getNumberOfPages: () => number;
     };
+    autoTable: (options: any) => any;
   }
 }

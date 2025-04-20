@@ -1,3 +1,4 @@
+
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 
@@ -32,18 +33,6 @@ export const exportData = async (
 };
 
 /**
- * Wrapper function for exportData for simpler use
- */
-export const handleExport = async (
-  data: any[],
-  format: "pdf" | "excel",
-  fileName: string,
-  metadata?: Record<string, any>
-): Promise<boolean> => {
-  return await exportData(data, format, fileName, metadata);
-};
-
-/**
  * Exports data as PDF with improved company information and structure
  */
 const exportPdf = (
@@ -72,7 +61,7 @@ const exportPdf = (
       } catch (error) {
         console.error("Erreur lors du chargement du logo:", error);
         doc.setFontSize(22);
-        doc.setTextColor(139, 92, 246);
+        doc.setTextColor(128, 0, 128);
         doc.text(appSettings.appName.substring(0, 1), 25, 25);
       }
     }
@@ -95,116 +84,97 @@ const exportPdf = (
     doc.setFont('helvetica', 'bold');
     doc.text(title.toUpperCase(), 105, 55, { align: 'center' });
     
-    // Export date
+    // Export date and contextual information
     doc.setFontSize(11);
-    doc.text(`Date: ${metadata?.invoiceDate || new Date().toLocaleDateString('fr-FR')}`, 105, 62, { align: 'center' });
+    doc.text(`Date d'exportation: ${new Date().toLocaleDateString('fr-FR')}`, 105, 62, { align: 'center' });
     
-    if (isInvoice) {
-      // Invoice specific layout
-      const order = data[0];
+    // Add metadata as contextual information
+    if (metadata) {
+      let yPosition = 70;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
       
-      // Customer information
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Facturé à:', 15, 80);
-      doc.setFont('helvetica', 'normal');
-      doc.text(metadata?.customer || order.customer, 15, 87);
-      doc.text(metadata?.customerEmail || 'client@example.com', 15, 93);
+      // Filter out title which is already displayed
+      const contextualInfo = Object.entries(metadata).filter(([key]) => key !== 'title');
       
-      // Items table for invoice
-      const items = order.items || [];
-      const tableBody = items.map((item: any) => [
-        item.description,
-        item.quantity.toString(),
-        item.unitPrice,
-        item.total
-      ]);
-      
-      // @ts-ignore - jspdf-autotable functionality
-      doc.autoTable({
-        startY: 105,
-        head: [['Description', 'Qté', 'Prix unitaire', 'Total']],
-        body: tableBody,
-        theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 4 },
-        headStyles: { fillColor: [139, 92, 246], textColor: 255 },
-        columnStyles: {
-          0: { cellWidth: 80 },
-          1: { cellWidth: 20, halign: 'center' },
-          2: { cellWidth: 40, halign: 'right' },
-          3: { cellWidth: 40, halign: 'right' }
+      for (const [key, value] of contextualInfo) {
+        if (typeof value !== 'object') {
+          const formattedKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          doc.text(`${formattedKey}: ${value}`, 15, yPosition);
+          yPosition += 6;
         }
-      });
+      }
       
-      const finalY = (doc as any).lastAutoTable.finalY + 15;
+      yPosition += 5;
       
-      // Total
-      doc.setFont('helvetica', 'bold');
-      doc.text('Total', 150, finalY);
-      doc.text(order.total, 180, finalY, { align: 'right' });
-      
-      // Footer
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text('Merci pour votre commande!', 105, finalY + 20, { align: 'center' });
-      doc.text(`${appSettings.appName} - SIRET: 12345678900000`, 105, finalY + 25, { align: 'center' });
-    } else {
-      // Standard export for lists
+      // Table data
       if (data.length > 0) {
-        // Add metadata as contextual information
-        if (metadata) {
-          let yPosition = 70;
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'italic');
-          
-          // Filter out title which is already displayed
-          const contextualInfo = Object.entries(metadata).filter(([key]) => 
-            key !== 'title' && key !== 'invoiceType' && 
-            key !== 'customer' && key !== 'customerEmail' &&
-            key !== 'invoiceDate' && key !== 'dueDate'
-          );
-          
-          for (const [key, value] of contextualInfo) {
-            if (typeof value !== 'object') {
-              const formattedKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-              doc.text(`${formattedKey}: ${value}`, 15, yPosition);
-              yPosition += 6;
-            }
-          }
-          
-          yPosition += 5;
-          
-          // Generate table based on data structure
-          const firstItem = data[0];
-          const headers = Object.keys(firstItem).filter(key => key !== 'items'); // Exclude items array for list exports
-          const rows = data.map(item => headers.map(header => {
-            if (header === 'status') {
-              return item[header] === "completed" ? "Terminée" : 
-                    item[header] === "processing" ? "En traitement" : 
-                    item[header] === "pending" ? "En attente" : 
-                    item[header] === "cancelled" ? "Annulée" : "En attente de validation";
-            }
-            return item[header];
-          }));
-          
-          // Format headers for display
-          const formattedHeaders = headers.map(header => 
-            header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')
-          );
-          
-          // @ts-ignore - jspdf-autotable functionality
-          doc.autoTable({
-            head: [formattedHeaders],
-            body: rows,
-            startY: yPosition,
-            theme: 'grid',
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [139, 92, 246] },
-            margin: { top: 10 }
-          });
-        }
+        const firstItem = data[0];
+        const headers = Object.keys(firstItem);
+        const rows = data.map(item => headers.map(header => item[header]));
+        
+        // Format headers for display
+        const formattedHeaders = headers.map(header => 
+          header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')
+        );
+        
+        // @ts-ignore - jspdf-autotable functionality
+        doc.autoTable({
+          head: [formattedHeaders],
+          body: rows,
+          startY: yPosition,
+          theme: 'grid',
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [139, 92, 246] }, // Utilisation de la couleur Zen (violet)
+          margin: { top: 10 }
+        });
+      } else {
+        doc.text("Aucune donnée disponible", 15, yPosition);
+      }
+    } else {
+      // Simple table for data without metadata
+      if (data.length > 0) {
+        const firstItem = data[0];
+        const headers = Object.keys(firstItem);
+        const rows = data.map(item => headers.map(header => item[header]));
+        
+        const formattedHeaders = headers.map(header => 
+          header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')
+        );
+        
+        // @ts-ignore - jspdf-autotable functionality
+        doc.autoTable({
+          head: [formattedHeaders],
+          body: rows,
+          startY: 70,
+          theme: 'grid',
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [139, 92, 246] } // Utilisation de la couleur Zen (violet)
+        });
       } else {
         doc.text("Aucune donnée disponible", 15, 70);
+      }
+    }
+    
+    // Add summary information at the bottom if we have data
+    if (data.length > 0) {
+      const finalY = (doc as any).lastAutoTable.finalY || 70;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total éléments: ${data.length}`, 15, finalY + 15);
+      
+      // Add custom summary based on data type if needed
+      if (metadata?.summary) {
+        const summaryLines = typeof metadata.summary === 'string' 
+          ? [metadata.summary] 
+          : Object.entries(metadata.summary).map(([key, value]) => `${key}: ${value}`);
+          
+        let summaryY = finalY + 22;
+        summaryLines.forEach(line => {
+          doc.text(line, 15, summaryY);
+          summaryY += 7;
+        });
       }
     }
     

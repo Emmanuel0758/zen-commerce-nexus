@@ -1,5 +1,15 @@
+
+import { useState } from "react";
+import Layout from "@/components/Layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeliveryTrackingTable } from "@/components/DeliveryTrackingTable";
+import { DeliveryMapCard } from "@/components/DeliveryMapCard";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Download, FileDown } from "lucide-react";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Exports data in different formats
@@ -279,12 +289,136 @@ const exportExcel = (
   }
 };
 
-// Add a default export function for the page component
+// Sample delivery data for export
+const sampleDeliveries = [
+  {
+    id: "DEL-1055",
+    orderId: "#1055",
+    carrier: "Livreur Express A",
+    destination: "Abidjan Centre",
+    status: "En cours",
+    estimatedDelivery: "Aujourd'hui, 14:30"
+  },
+  {
+    id: "DEL-1052",
+    orderId: "#1052",
+    carrier: "Livreur Rapide B",
+    destination: "Bouaké",
+    status: "Retardé",
+    estimatedDelivery: "Aujourd'hui, 16:45"
+  },
+  {
+    id: "DEL-1050",
+    orderId: "#1050",
+    carrier: "Non Assigné",
+    destination: "Yamoussoukro",
+    status: "Prêt",
+    estimatedDelivery: "-"
+  },
+  {
+    id: "DEL-1047",
+    orderId: "#1047",
+    carrier: "Transport Express C",
+    destination: "San-Pédro",
+    status: "Livré",
+    estimatedDelivery: "-"
+  },
+  {
+    id: "DEL-1045",
+    orderId: "#1045",
+    carrier: "Non Assigné",
+    destination: "Korhogo",
+    status: "Prêt",
+    estimatedDelivery: "-"
+  }
+];
+
+// Main component for the logistics page
 export default function LogisticsPage() {
+  const { toast } = useToast();
+  
+  const handleExportDeliveries = async (format: "pdf" | "excel") => {
+    const fileName = "liste-livraisons";
+    const metadata = {
+      title: "Liste des Livraisons",
+      totalDeliveries: sampleDeliveries.length,
+      date: new Date().toLocaleDateString('fr-FR')
+    };
+    
+    const success = await exportData(sampleDeliveries, format, fileName, metadata);
+    if (success) {
+      toast({
+        title: "Export réussi",
+        description: `La liste des livraisons a été exportée en format ${format.toUpperCase()}`
+      });
+    } else {
+      toast({
+        title: "Erreur d'export",
+        description: "Une erreur est survenue lors de l'exportation",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
-    <div>
-      <h1>Logistics Page</h1>
-      <p>This page provides logistics management functionality.</p>
-    </div>
+    <Layout title="Logistique">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-bold tracking-tight">Tableau de bord Logistique</h2>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <FileDown className="mr-2 h-4 w-4" />
+                Exporter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleExportDeliveries("excel")}>
+                Format Excel (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportDeliveries("pdf")}>
+                Format PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-md font-medium">Aperçu des Livraisons</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total Livraisons</span>
+                  <span className="text-2xl font-bold">5</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-green-600 dark:text-green-400">En cours</span>
+                  <span className="text-xl font-semibold">1</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-amber-600 dark:text-amber-400">Retardées</span>
+                  <span className="text-xl font-semibold">1</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Prêtes</span>
+                  <span className="text-xl font-semibold">2</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Livrées</span>
+                  <span className="text-xl font-semibold">1</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <DeliveryMapCard />
+        </div>
+        
+        <DeliveryTrackingTable />
+      </div>
+    </Layout>
   );
 }

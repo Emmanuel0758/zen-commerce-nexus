@@ -9,74 +9,7 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      clients: {
-        Row: {
-          city: string | null
-          created_at: string | null
-          email: string | null
-          id: string
-          name: string
-          phone: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          city?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          name: string
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          city?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          name?: string
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      orders: {
-        Row: {
-          client_id: string
-          created_at: string | null
-          id: string
-          items_count: number
-          order_number: string
-          status: string
-          total_amount: number
-        }
-        Insert: {
-          client_id: string
-          created_at?: string | null
-          id?: string
-          items_count?: number
-          order_number: string
-          status?: string
-          total_amount?: number
-        }
-        Update: {
-          client_id?: string
-          created_at?: string | null
-          id?: string
-          items_count?: number
-          order_number?: string
-          status?: string
-          total_amount?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "orders_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never

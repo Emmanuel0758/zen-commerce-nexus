@@ -1,5 +1,6 @@
-
 import { useState } from "react";
+import { useClients } from "@/hooks/useClients";
+import { useOrders } from "@/hooks/useOrders";
 import { SidebarNav } from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,97 +54,18 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { exportData } from "@/utils/exportUtils";
+import { Order } from "@/types/types";
 
-type Order = {
-  id: string;
+type NewOrderFormValues = {
   customer: string;
-  date: string;
-  items: number;
-  total: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  items: { product: string; quantity: number }[];
   status: "pending" | "processing" | "completed" | "cancelled" | "onhold";
+  shippingAddress?: string;
+  notes?: string;
 };
-
-const demoOrders: Order[] = [
-  {
-    id: "ZEN-1049",
-    customer: "Sophie Martin",
-    date: "15/07/2023",
-    items: 3,
-    total: "79 999 FCFA",
-    status: "completed",
-  },
-  {
-    id: "ZEN-1048",
-    customer: "Thomas Bernard",
-    date: "15/07/2023",
-    items: 1,
-    total: "19 999 FCFA",
-    status: "processing",
-  },
-  {
-    id: "ZEN-1047",
-    customer: "Emma Dubois",
-    date: "14/07/2023",
-    items: 2,
-    total: "39 999 FCFA",
-    status: "processing",
-  },
-  {
-    id: "ZEN-1046",
-    customer: "Alexandre Petit",
-    date: "14/07/2023",
-    items: 2,
-    total: "59 999 FCFA",
-    status: "pending",
-  },
-  {
-    id: "ZEN-1045",
-    customer: "Chloé Robert",
-    date: "13/07/2023",
-    items: 1,
-    total: "29 999 FCFA",
-    status: "cancelled",
-  },
-  {
-    id: "ZEN-1044",
-    customer: "Lucas Moreau",
-    date: "13/07/2023",
-    items: 4,
-    total: "94 999 FCFA",
-    status: "completed",
-  },
-  {
-    id: "ZEN-1043",
-    customer: "Julie Leroy",
-    date: "12/07/2023",
-    items: 1,
-    total: "24 999 FCFA",
-    status: "onhold",
-  },
-  {
-    id: "ZEN-1042",
-    customer: "Mathieu Dupont",
-    date: "12/07/2023",
-    items: 2,
-    total: "44 499 FCFA",
-    status: "completed",
-  },
-];
-
-const newOrderSchema = z.object({
-  customer: z.string().min(3, { message: "Le nom du client est requis (min. 3 caractères)" }),
-  items: z.array(z.object({
-    product: z.string().min(1, { message: "Veuillez sélectionner un produit" }),
-    quantity: z.number().min(1, { message: "La quantité doit être d'au moins 1" })
-  })).min(1),
-  status: z.enum(["pending", "processing", "completed", "cancelled", "onhold"], {
-    required_error: "Veuillez sélectionner un statut"
-  }),
-  shippingAddress: z.string().optional(),
-  notes: z.string().optional()
-});
-
-type NewOrderFormValues = z.infer<typeof newOrderSchema>;
 
 const demoProducts = [
   { id: "prod-1", name: "Zen Classic (500ml)", price: 9999 },
@@ -154,7 +76,6 @@ const demoProducts = [
 ];
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(demoOrders);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
@@ -162,11 +83,29 @@ export default function OrdersPage() {
   const [isViewOrderDialogOpen, setIsViewOrderDialogOpen] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const { settings } = useAppSettings();
-
   const { toast } = useToast();
   
+  const { clients, createClient } = useClients();
+  const { orders, createOrder } = useOrders();
+
   const form = useForm<NewOrderFormValues>({
-    resolver: zodResolver(newOrderSchema),
+    resolver: zodResolver(
+      z.object({
+        customer: z.string().min(3, { message: "Le nom du client est requis (min. 3 caractères)" }),
+        email: z.string().email({ message: "Email invalide" }).optional(),
+        phone: z.string().optional(),
+        city: z.string().optional(),
+        items: z.array(z.object({
+          product: z.string().min(1, { message: "Veuillez sélectionner un produit" }),
+          quantity: z.number().min(1, { message: "La quantité doit être d'au moins 1" })
+        })).min(1),
+        status: z.enum(["pending", "processing", "completed", "cancelled", "onhold"], {
+          required_error: "Veuillez sélectionner un statut"
+        }),
+        shippingAddress: z.string().optional(),
+        notes: z.string().optional()
+      })
+    ),
     defaultValues: {
       customer: "",
       items: [{ product: "", quantity: 1 }],
@@ -176,7 +115,7 @@ export default function OrdersPage() {
     },
   });
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = (orders || []).filter(order => {
     const matchesSearch = order.customer.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          order.id.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -185,11 +124,11 @@ export default function OrdersPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const pendingCount = orders.filter(o => o.status === "pending").length;
-  const processingCount = orders.filter(o => o.status === "processing").length;
-  const completedCount = orders.filter(o => o.status === "completed").length;
-  const cancelledCount = orders.filter(o => o.status === "cancelled").length;
-  const onHoldCount = orders.filter(o => o.status === "onhold").length;
+  const pendingCount = (orders || []).filter(o => o.status === "pending").length;
+  const processingCount = (orders || []).filter(o => o.status === "processing").length;
+  const completedCount = (orders || []).filter(o => o.status === "completed").length;
+  const cancelledCount = (orders || []).filter(o => o.status === "cancelled").length;
+  const onHoldCount = (orders || []).filter(o => o.status === "onhold").length;
 
   const handleViewOrder = (order: Order) => {
     setCurrentOrder(order);
@@ -228,48 +167,71 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCreateNewOrder = (data: NewOrderFormValues) => {
-    let totalAmount = 0;
-    let itemCount = 0;
-    
-    data.items.forEach(item => {
-      const product = demoProducts.find(p => p.id === item.product);
-      if (product) {
-        totalAmount += product.price * item.quantity;
-        itemCount += item.quantity;
+  const handleCreateNewOrder = async (data: NewOrderFormValues) => {
+    try {
+      // Vérifier si le client existe déjà
+      const existingClient = clients.find(c => 
+        c.name.toLowerCase() === data.customer.toLowerCase()
+      );
+
+      let clientId;
+      
+      if (!existingClient) {
+        // Créer un nouveau client
+        const newClient = await createClient.mutateAsync({
+          name: data.customer,
+          email: data.email || '',
+          phone: data.phone || '',
+          city: data.city || '',
+          status: 'active'
+        });
+        clientId = newClient.id;
+        
+        toast({
+          title: "Nouveau client créé",
+          description: `Le client ${data.customer} a été créé avec succès`
+        });
+      } else {
+        clientId = existingClient.id;
       }
-    });
-    
-    const totalFormatted = `${totalAmount.toLocaleString('fr-FR')} FCFA`;
-    
-    const orderNumber = 1050 + orders.length;
-    const orderId = `ZEN-${orderNumber}`;
-    
-    const today = new Date().toLocaleDateString('fr-FR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    });
-    
-    const newOrder: Order = {
-      id: orderId,
-      customer: data.customer,
-      date: today,
-      items: itemCount,
-      total: totalFormatted,
-      status: data.status,
-    };
-    
-    setOrders([newOrder, ...orders]);
-    
-    form.reset();
-    
-    setIsNewOrderDialogOpen(false);
-    
-    toast({
-      title: "Commande créée",
-      description: `La commande ${orderId} a été créée avec succès.`
-    });
+
+      // Calculer le total
+      let totalAmount = 0;
+      let itemCount = 0;
+      
+      data.items.forEach(item => {
+        const product = demoProducts.find(p => p.id === item.product);
+        if (product) {
+          totalAmount += product.price * item.quantity;
+          itemCount += item.quantity;
+        }
+      });
+
+      // Créer la commande
+      const orderNumber = `ZEN-${1050 + (orders?.length || 0)}`;
+      await createOrder.mutateAsync({
+        client_id: clientId,
+        order_number: orderNumber,
+        items_count: itemCount,
+        total_amount: totalAmount,
+        status: data.status
+      });
+
+      form.reset();
+      setIsNewOrderDialogOpen(false);
+      
+      toast({
+        title: "Commande créée",
+        description: `La commande ${orderNumber} a été créée avec succès.`
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création de la commande",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddProductField = () => {
@@ -543,7 +505,7 @@ export default function OrdersPage() {
         <section className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <div className="text-3xl font-bold">{orders.length}</div>
+              <div className="text-3xl font-bold">{orders?.length}</div>
               <p className="text-sm text-muted-foreground">Total</p>
             </CardContent>
           </Card>
@@ -892,85 +854,4 @@ export default function OrdersPage() {
                             <SelectContent>
                               {demoProducts.map(product => (
                                 <SelectItem key={product.id} value={product.id}>
-                                  {product.name} - {product.price.toLocaleString('fr-FR')} FCFA
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.quantity`}
-                      render={({ field }) => (
-                        <FormItem className="w-28">
-                          <FormLabel>Quantité</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              min="1" 
-                              {...field} 
-                              onChange={e => field.onChange(parseInt(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {form.getValues().items.length > 1 && (
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-red-500 hover:text-red-700 mb-1"
-                        onClick={() => handleRemoveProductField(index)}
-                      >
-                        Supprimer
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="shippingAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Adresse de livraison</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button type="submit">Créer la commande</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                                  {product.name} - {product.

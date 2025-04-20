@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { StatCard } from "@/components/StatCard";
@@ -37,16 +36,8 @@ export default function Index() {
   // Add fallback to 'fr' if language is not in translations
   const t = translations[language as keyof typeof translations] || translations.fr;
   
-  const getCurrencySymbol = (currencyCode: string) => {
-    switch(currencyCode) {
-      case 'EUR': return '€';
-      case 'USD': return '$';
-      case 'GBP': return '£';
-      default: return currencyCode;
-    }
-  };
-  
-  const currencySymbol = getCurrencySymbol(currency);
+  // Toujours retourner CFA pour l'affichage
+  const currencySymbol = "CFA";
 
   // Add console logs to help debug future issues
   console.log("Current language:", language);

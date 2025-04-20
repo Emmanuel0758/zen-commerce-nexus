@@ -77,8 +77,11 @@ export function ProductInventoryCard() {
         : product.status === "instock" ? "In stock" : product.status === "lowstock" ? "Low stock" : "Out of stock";
       
       return {
-        ...product,
-        localizedStatus: statusTranslation
+        ID: product.id,
+        Produit: product.name,
+        Prix: product.price,
+        Stock: product.stock,
+        Statut: statusTranslation
       };
     });
   };
@@ -94,10 +97,11 @@ export function ProductInventoryCard() {
       
       const exportDataItems = getExportData();
       const metadata = {
-        title: settings.language === 'fr' ? "Inventaire produits" : "Product inventory",
+        title: settings.language === 'fr' ? "Inventaire Produits" : "Product Inventory",
         exportDate: new Date().toISOString(),
         totalItems: exportDataItems.length,
-        appName: settings.appName
+        appName: settings.appName,
+        currency: "CFA"
       };
       
       const success = await exportData(

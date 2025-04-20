@@ -5,21 +5,19 @@ import 'jspdf-autotable';
 /**
  * Exports data in different formats
  * @param data The data to export
- * @param format The format to export (json, pdf, excel)
+ * @param format The format to export (pdf, excel)
  * @param fileName The name of the file without extension
  * @param metadata Optional metadata about the export
  * @returns Promise resolving to true if export was successful
  */
 export const exportData = async (
   data: any[],
-  format: "json" | "pdf" | "excel",
+  format: "pdf" | "excel",
   fileName: string,
   metadata?: Record<string, any>
 ): Promise<boolean> => {
   try {
     switch (format) {
-      case "json":
-        return exportJson(fileName, data, metadata);
       case "pdf":
         return exportPdf(fileName, data, metadata);
       case "excel":
@@ -39,35 +37,11 @@ export const exportData = async (
  */
 export const handleExport = async (
   data: any[],
-  format: "json" | "pdf" | "excel",
+  format: "pdf" | "excel",
   fileName: string,
   metadata?: Record<string, any>
 ): Promise<boolean> => {
   return await exportData(data, format, fileName, metadata);
-};
-
-/**
- * Exports data as JSON
- */
-const exportJson = (
-  fileName: string,
-  data: any[],
-  metadata?: Record<string, any>
-): boolean => {
-  try {
-    const exportObj = metadata ? { metadata, data } : data;
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `${fileName}.json`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-    return true;
-  } catch (error) {
-    console.error("Erreur lors de l'exportation JSON:", error);
-    return false;
-  }
 };
 
 /**
@@ -84,7 +58,7 @@ const exportPdf = (
     const appSettings = appSettingsStr ? JSON.parse(appSettingsStr) : {
       appName: 'Zen Commerce',
       logo: null,
-      currency: 'XOF'
+      currency: 'CFA'
     };
     
     const doc = new jsPDF();
@@ -160,7 +134,7 @@ const exportPdf = (
           startY: yPosition,
           theme: 'grid',
           styles: { fontSize: 8 },
-          headStyles: { fillColor: [66, 66, 66] },
+          headStyles: { fillColor: [139, 92, 246] }, // Utilisation de la couleur Zen (violet)
           margin: { top: 10 }
         });
       } else {
@@ -184,7 +158,7 @@ const exportPdf = (
           startY: 70,
           theme: 'grid',
           styles: { fontSize: 8 },
-          headStyles: { fillColor: [66, 66, 66] }
+          headStyles: { fillColor: [139, 92, 246] } // Utilisation de la couleur Zen (violet)
         });
       } else {
         doc.text("Aucune donnée disponible", 15, 70);

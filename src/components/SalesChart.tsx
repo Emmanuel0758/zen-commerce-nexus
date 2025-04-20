@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import {
@@ -142,7 +141,7 @@ export function SalesChart() {
   }
 
   const formatValue = (value: number) => {
-    return `${value.toLocaleString()} ${settings.currency === 'EUR' ? '€' : settings.currency}`;
+    return `${value.toLocaleString()} CFA`;
   };
 
   return (
@@ -203,7 +202,7 @@ export function SalesChart() {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="name" className="text-xs" />
               <YAxis
-                tickFormatter={(value) => `${value} ${settings.currency === 'EUR' ? '€' : settings.currency}`}
+                tickFormatter={(value) => `${value} CFA`}
                 className="text-xs"
               />
               <Tooltip

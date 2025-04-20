@@ -14,7 +14,7 @@ export interface AppSettings {
 const defaultSettings: AppSettings = {
   appName: 'Zen Commerce',
   logo: null,
-  currency: 'XOF',
+  currency: 'CFA',
   theme: 'system',
   emailTemplates: 'default',
   analyticsEnabled: true,

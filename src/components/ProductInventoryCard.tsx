@@ -85,7 +85,7 @@ export function ProductInventoryCard() {
 
   const exportFileName = settings.language === 'fr' ? 'inventaire-produits' : 'product-inventory';
 
-  const handleExportRequest = async (format: "json" | "pdf" | "excel") => {
+  const handleExportRequest = async (format: "excel" | "pdf") => {
     try {
       toast({
         title: `Exportation ${format.toUpperCase()} en cours`,
@@ -145,10 +145,6 @@ export function ProductInventoryCard() {
               <DropdownMenuItem onClick={() => handleExportRequest("pdf")}>
                 <FileDown className="mr-2 h-4 w-4" />
                 Format PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportRequest("json")}>
-                <FileText className="mr-2 h-4 w-4" />
-                Format JSON
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
